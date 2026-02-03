@@ -1,0 +1,313 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 Int              @id @default(autoincrement()) @db.UnsignedInt
+  email              String           @unique(map: "email") @db.VarChar(255)
+  passwordHash       String?          @map("password_hash") @db.VarChar(255)
+  nickname           String           @unique(map: "nickname") @db.VarChar(50)
+  profileImage       String?          @map("profile_image") @db.VarChar(500)
+  bio                String?          @db.Text
+  role               UserRole?        @default(user)
+  isActive           Boolean?         @default(true) @map("is_active")
+  createdAt          DateTime?        @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt          DateTime?        @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
+  lastLoginAt        DateTime?        @map("last_login_at") @db.DateTime(0)
+  attachments        Attachment[]
+  comments           Comment[]
+  diaryEntries       DiaryEntry[]
+  guestbookEntries   GuestbookEntry[]
+  likes              Like[]
+  notifications      Notification[]   @relation("UserNotifications")
+  actorNotifications Notification[]   @relation("ActorNotifications")
+  oauthAccounts      OAuthAccount[]
+  posts              Post[]
+  refreshTokens      RefreshToken[]
+  visitorLogs        VisitorLog[]
+  portfolios         Portfolio[]
+
+  @@index([email], map: "idx_users_email")
+  @@index([nickname], map: "idx_users_nickname")
+  @@map("users")
+}
+
+model OAuthAccount {
+  id           Int       @id @default(autoincrement()) @db.UnsignedInt
+  userId       Int       @map("user_id") @db.UnsignedInt
+  provider     String    @db.VarChar(50)
+  providerId   String    @map("provider_id") @db.VarChar(255)
+  accessToken  String?   @map("access_token") @db.Text
+  refreshToken String?   @map("refresh_token") @db.Text
+  expiresAt    DateTime? @map("expires_at") @db.DateTime(0)
+  createdAt    DateTime? @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt    DateTime? @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "oauth_accounts_ibfk_1")
+
+  @@unique([provider, providerId], name: "uk_oauth_provider", map: "uk_oauth_provider")
+  @@index([userId], map: "idx_oauth_user")
+  @@map("oauth_accounts")
+}
+
+model RefreshToken {
+  id        Int       @id @default(autoincrement()) @db.UnsignedInt
+  userId    Int       @map("user_id") @db.UnsignedInt
+  token     String    @unique(map: "token") @db.VarChar(500)
+  expiresAt DateTime  @map("expires_at") @db.DateTime(0)
+  createdAt DateTime? @default(now()) @map("created_at") @db.DateTime(0)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "refresh_tokens_ibfk_1")
+
+  @@index([expiresAt], map: "idx_refresh_expires")
+  @@index([userId], map: "idx_refresh_user")
+  @@map("refresh_tokens")
+}
+
+model GuestbookEntry {
+  id            Int       @id @default(autoincrement()) @db.UnsignedInt
+  userId        Int?      @map("user_id") @db.UnsignedInt
+  guestName     String?   @map("guest_name") @db.VarChar(50)
+  guestPassword String?   @map("guest_password") @db.VarChar(255)
+  content       String    @db.Text
+  isPrivate     Boolean?  @default(false) @map("is_private")
+  isDeleted     Boolean?  @default(false) @map("is_deleted")
+  createdAt     DateTime? @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt     DateTime? @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
+  user          User?     @relation(fields: [userId], references: [id], onUpdate: Restrict, map: "guestbook_entries_ibfk_1")
+
+  @@index([createdAt], map: "idx_guestbook_created")
+  @@index([userId], map: "idx_guestbook_user")
+  @@map("guestbook_entries")
+}
+
+model BoardCategory {
+  id          Int       @id @default(autoincrement()) @db.UnsignedInt
+  name        String    @db.VarChar(100)
+  slug        String    @unique(map: "slug") @db.VarChar(100)
+  description String?   @db.Text
+  sortOrder   Int?      @default(0) @map("sort_order")
+  isActive    Boolean?  @default(true) @map("is_active")
+  createdAt   DateTime? @default(now()) @map("created_at") @db.DateTime(0)
+  posts       Post[]
+
+  @@index([sortOrder], map: "idx_category_order")
+  @@index([slug], map: "idx_category_slug")
+  @@map("board_categories")
+}
+
+model Post {
+  id           Int           @id @default(autoincrement()) @db.UnsignedInt
+  categoryId   Int           @map("category_id") @db.UnsignedInt
+  userId       Int?          @map("user_id") @db.UnsignedInt
+  title        String        @db.VarChar(200)
+  content      String        @db.MediumText
+  viewCount    Int?          @default(0) @map("view_count") @db.UnsignedInt
+  likeCount    Int?          @default(0) @map("like_count") @db.UnsignedInt
+  commentCount Int?          @default(0) @map("comment_count") @db.UnsignedInt
+  isPinned     Boolean?      @default(false) @map("is_pinned")
+  isPrivate    Boolean?      @default(false) @map("is_private")
+  isDeleted    Boolean?      @default(false) @map("is_deleted")
+  createdAt    DateTime?     @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt    DateTime?     @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
+  comments     Comment[]
+  category     BoardCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "posts_ibfk_1")
+  user         User?         @relation(fields: [userId], references: [id], onUpdate: Restrict, map: "posts_ibfk_2")
+
+  @@index([categoryId], map: "idx_posts_category")
+  @@index([createdAt], map: "idx_posts_created")
+  @@index([isPinned, createdAt], map: "idx_posts_pinned")
+  @@index([userId], map: "idx_posts_user")
+  @@map("posts")
+}
+
+model Comment {
+  id        Int       @id @default(autoincrement()) @db.UnsignedInt
+  postId    Int       @map("post_id") @db.UnsignedInt
+  userId    Int?      @map("user_id") @db.UnsignedInt
+  parentId  Int?      @map("parent_id") @db.UnsignedInt
+  content   String    @db.Text
+  depth     Int?      @default(0) @db.UnsignedTinyInt
+  likeCount Int?      @default(0) @map("like_count") @db.UnsignedInt
+  isDeleted Boolean?  @default(false) @map("is_deleted")
+  createdAt DateTime? @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt DateTime? @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
+  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "comments_ibfk_1")
+  user      User?     @relation(fields: [userId], references: [id], onUpdate: Restrict, map: "comments_ibfk_2")
+  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "comments_ibfk_3")
+  replies   Comment[] @relation("CommentReplies")
+
+  @@index([parentId], map: "idx_comments_parent")
+  @@index([postId, createdAt], map: "idx_comments_post")
+  @@index([userId], map: "idx_comments_user")
+  @@map("comments")
+}
+
+model DiaryEntry {
+  id        Int       @id @default(autoincrement()) @db.UnsignedInt
+  userId    Int       @map("user_id") @db.UnsignedInt
+  title     String?   @db.VarChar(200)
+  content   String    @db.Text
+  mood      String?   @db.VarChar(20)
+  weather   String?   @db.VarChar(20)
+  isPublic  Boolean?  @default(false) @map("is_public")
+  createdAt DateTime? @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt DateTime? @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "diary_entries_ibfk_1")
+
+  @@index([userId, createdAt], map: "idx_diary_user")
+  @@map("diary_entries")
+}
+
+model Like {
+  id         Int        @id @default(autoincrement()) @db.UnsignedInt
+  userId     Int        @map("user_id") @db.UnsignedInt
+  targetType TargetType @map("target_type")
+  targetId   Int        @map("target_id") @db.UnsignedInt
+  createdAt  DateTime?  @default(now()) @map("created_at") @db.DateTime(0)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "likes_ibfk_1")
+
+  @@unique([userId, targetType, targetId], name: "uk_likes_user_target", map: "uk_likes_user_target")
+  @@index([targetType, targetId], map: "idx_likes_target")
+  @@map("likes")
+}
+
+model Attachment {
+  id           Int             @id @default(autoincrement()) @db.UnsignedInt
+  userId       Int?            @map("user_id") @db.UnsignedInt
+  targetType   AttachmentType? @map("target_type")
+  targetId     Int?            @map("target_id") @db.UnsignedInt
+  originalName String          @map("original_name") @db.VarChar(255)
+  storedName   String          @map("stored_name") @db.VarChar(255)
+  filePath     String          @map("file_path") @db.VarChar(500)
+  fileSize     Int?            @map("file_size") @db.UnsignedInt
+  mimeType     String?         @map("mime_type") @db.VarChar(100)
+  createdAt    DateTime?       @default(now()) @map("created_at") @db.DateTime(0)
+  user         User?           @relation(fields: [userId], references: [id], onUpdate: Restrict, map: "attachments_ibfk_1")
+
+  @@index([targetType, targetId], map: "idx_attachments_target")
+  @@index([userId], map: "idx_attachments_user")
+  @@map("attachments")
+}
+
+model Notification {
+  id         Int       @id @default(autoincrement()) @db.UnsignedInt
+  userId     Int       @map("user_id") @db.UnsignedInt
+  type       String    @db.VarChar(50)
+  actorId    Int?      @map("actor_id") @db.UnsignedInt
+  targetType String?   @map("target_type") @db.VarChar(50)
+  targetId   Int?      @map("target_id") @db.UnsignedInt
+  message    String?   @db.VarChar(500)
+  link       String?   @db.VarChar(500)
+  isRead     Boolean?  @default(false) @map("is_read")
+  createdAt  DateTime? @default(now()) @map("created_at") @db.DateTime(0)
+  user       User      @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "notifications_ibfk_1")
+  actor      User?     @relation("ActorNotifications", fields: [actorId], references: [id], onUpdate: Restrict, map: "notifications_ibfk_2")
+
+  @@index([actorId], map: "actor_id")
+  @@index([userId, isRead, createdAt], map: "idx_notifications_user")
+  @@map("notifications")
+}
+
+model VisitorLog {
+  id        Int       @id @default(autoincrement()) @db.UnsignedInt
+  visitorIp String?   @map("visitor_ip") @db.VarChar(50)
+  userId    Int?      @map("user_id") @db.UnsignedInt
+  userAgent String?   @map("user_agent") @db.VarChar(500)
+  pagePath  String?   @map("page_path") @db.VarChar(255)
+  visitedAt DateTime? @default(now()) @map("visited_at") @db.DateTime(0)
+  user      User?     @relation(fields: [userId], references: [id], onUpdate: Restrict, map: "visitor_logs_ibfk_1")
+
+  @@index([visitedAt], map: "idx_visitor_date")
+  @@index([userId], map: "idx_visitor_user")
+  @@map("visitor_logs")
+}
+
+model VisitorStat {
+  id          Int      @id @default(autoincrement()) @db.UnsignedInt
+  visitDate   DateTime @unique(map: "visit_date") @map("visit_date") @db.Date
+  totalCount  Int?     @default(0) @map("total_count") @db.UnsignedInt
+  uniqueCount Int?     @default(0) @map("unique_count") @db.UnsignedInt
+
+  @@index([visitDate], map: "idx_stats_date")
+  @@map("visitor_stats")
+}
+
+model SiteSetting {
+  id           Int       @id @default(autoincrement()) @db.UnsignedInt
+  settingKey   String    @unique(map: "setting_key") @map("setting_key") @db.VarChar(100)
+  settingValue String?   @map("setting_value") @db.Text
+  description  String?   @db.VarChar(255)
+  updatedAt    DateTime? @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
+
+  @@map("site_settings")
+}
+
+enum UserRole {
+  admin
+  user
+}
+
+enum TargetType {
+  post
+  comment
+  guestbook
+  diary
+}
+
+enum AttachmentType {
+  post
+  diary
+  profile
+  guestbook
+}
+
+model Portfolio {
+  id          Int            @id @default(autoincrement()) @db.UnsignedInt
+  userId      Int            @map("user_id") @db.UnsignedInt
+  title       String         @db.VarChar(200)
+  content     String         @db.MediumText
+  description String?        @db.Text
+  image       String?        @db.VarChar(500)
+  githubUrl   String?        @map("github_url") @db.VarChar(500)
+  notionUrl   String?        @map("notion_url") @db.VarChar(500)
+  featured    Boolean?       @default(false)
+  isDeleted   Boolean?       @default(false) @map("is_deleted")
+  sortOrder   Int?           @default(0) @map("sort_order")
+  isDraft     Boolean?       @default(false) @map("is_draft")
+  draftData   String?        @map("draft_data") @db.MediumText
+  draftAt     DateTime?      @map("draft_at") @db.DateTime(0)
+  createdAt   DateTime?      @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt   DateTime?      @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "portfolios_ibfk_1")
+  tags        PortfolioTag[]
+
+  @@index([userId], map: "idx_portfolio_user")
+  @@index([createdAt], map: "idx_portfolio_created")
+  @@index([sortOrder], map: "idx_portfolio_order")
+  @@map("portfolios")
+}
+
+model Tag {
+  id         Int            @id @default(autoincrement()) @db.UnsignedInt
+  name       String         @unique(map: "tag_name") @db.VarChar(50)
+  color      String?        @db.VarChar(20)
+  createdAt  DateTime?      @default(now()) @map("created_at") @db.DateTime(0)
+  portfolios PortfolioTag[]
+
+  @@map("tags")
+}
+
+model PortfolioTag {
+  portfolioId Int       @map("portfolio_id") @db.UnsignedInt
+  tagId       Int       @map("tag_id") @db.UnsignedInt
+  portfolio   Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "portfolio_tags_ibfk_1")
+  tag         Tag       @relation(fields: [tagId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "portfolio_tags_ibfk_2")
+
+  @@id([portfolioId, tagId])
+  @@index([tagId], map: "idx_portfolio_tag_tag")
+  @@map("portfolio_tags")
+}
