@@ -47,10 +47,10 @@ describe('RichTextEditor', () => {
       render(<RichTextEditor {...defaultProps} />)
 
       expect(
-        screen.getByRole('button', { name: /헤딩 1/i })
+        screen.getByRole('button', { name: /제목 1/i })
       ).toBeInTheDocument()
       expect(
-        screen.getByRole('button', { name: /헤딩 2/i })
+        screen.getByRole('button', { name: /제목 2/i })
       ).toBeInTheDocument()
     })
 
@@ -58,10 +58,10 @@ describe('RichTextEditor', () => {
       render(<RichTextEditor {...defaultProps} />)
 
       expect(
-        screen.getByRole('button', { name: /글머리 기호/i })
+        screen.getByRole('button', { name: /글머리 기호 목록/i })
       ).toBeInTheDocument()
       expect(
-        screen.getByRole('button', { name: /번호 목록/i })
+        screen.getByRole('button', { name: /번호 매기기 목록/i })
       ).toBeInTheDocument()
     })
 
@@ -113,6 +113,47 @@ describe('RichTextEditor', () => {
       expect(
         screen.queryByRole('button', { name: /굵게/i })
       ).not.toBeInTheDocument()
+    })
+  })
+
+  describe('외부 content prop 변경', () => {
+    it('content prop이 변경되면 에디터 내용이 업데이트되어야 함', async () => {
+      const onChange = vi.fn()
+      const { rerender } = render(
+        <RichTextEditor content="" onChange={onChange} />
+      )
+
+      // 초기에는 비어있음
+      expect(screen.getByRole('textbox')).toBeInTheDocument()
+
+      // content prop 변경 (DB에서 데이터 로드 시뮬레이션)
+      rerender(
+        <RichTextEditor
+          content="<p>기존 콘텐츠 불러오기</p>"
+          onChange={onChange}
+        />
+      )
+
+      // 에디터에 새 내용이 표시되어야 함
+      expect(screen.getByText('기존 콘텐츠 불러오기')).toBeInTheDocument()
+    })
+
+    it('동일한 content로 rerender 시 불필요하게 업데이트하지 않아야 함', async () => {
+      const onChange = vi.fn()
+      const { rerender } = render(
+        <RichTextEditor content="<p>초기 내용</p>" onChange={onChange} />
+      )
+
+      // 초기 내용 확인
+      expect(screen.getByText('초기 내용')).toBeInTheDocument()
+
+      // 동일한 content로 rerender
+      rerender(
+        <RichTextEditor content="<p>초기 내용</p>" onChange={onChange} />
+      )
+
+      // 내용이 유지되어야 함 (onChange가 불필요하게 호출되지 않음)
+      expect(screen.getByText('초기 내용')).toBeInTheDocument()
     })
   })
 })

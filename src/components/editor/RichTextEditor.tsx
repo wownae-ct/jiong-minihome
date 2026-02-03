@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useRef, useState, DragEvent } from 'react'
+import { useCallback, useRef, useState, useEffect, DragEvent } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
@@ -11,6 +11,7 @@ import { Underline } from '@tiptap/extension-underline'
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
 import { common, createLowlight } from 'lowlight'
 import { Icon } from '@/components/ui/Icon'
+import { EditorToolbar } from './EditorToolbar'
 
 const lowlight = createLowlight(common)
 
@@ -22,48 +23,6 @@ interface RichTextEditorProps {
   error?: string
   editable?: boolean
   onImageUpload?: (file: File) => Promise<string>
-}
-
-interface ToolbarButtonProps {
-  onClick: () => void
-  isActive?: boolean
-  disabled?: boolean
-  title: string
-  'aria-label'?: string
-  'aria-pressed'?: boolean
-  children: React.ReactNode
-}
-
-function ToolbarButton({
-  onClick,
-  isActive,
-  disabled,
-  title,
-  'aria-label': ariaLabel,
-  'aria-pressed': ariaPressed,
-  children,
-}: ToolbarButtonProps) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      title={title}
-      aria-label={ariaLabel ?? title}
-      aria-pressed={ariaPressed ?? isActive}
-      className={`
-        p-1.5 rounded transition-colors
-        ${
-          isActive
-            ? 'bg-primary/20 text-primary'
-            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
-        }
-        disabled:opacity-50 disabled:cursor-not-allowed
-      `}
-    >
-      {children}
-    </button>
-  )
 }
 
 export function RichTextEditor({
@@ -82,23 +41,15 @@ export function RichTextEditor({
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
-      StarterKit.configure({
-        codeBlock: false,
-      }),
-      Placeholder.configure({
-        placeholder,
-      }),
+      StarterKit.configure({ codeBlock: false }),
+      Placeholder.configure({ placeholder }),
       Image.configure({
-        HTMLAttributes: {
-          class: 'max-w-full h-auto rounded-lg',
-        },
+        HTMLAttributes: { class: 'max-w-full h-auto rounded-lg' },
       }),
       TextStyle,
       Color,
       Underline,
-      CodeBlockLowlight.configure({
-        lowlight,
-      }),
+      CodeBlockLowlight.configure({ lowlight }),
     ],
     content,
     editable,
@@ -112,38 +63,23 @@ export function RichTextEditor({
         const items = event.clipboardData?.items
         if (!items) return false
 
-        // 이미지 파일 찾기
-        const imageItems = Array.from(items).filter(
-          (item) => item.type.startsWith('image/')
-        )
-
+        const imageItems = Array.from(items).filter((item) => item.type.startsWith('image/'))
         if (imageItems.length === 0) return false
 
-        // 이미지 붙여넣기 처리 (비동기)
         event.preventDefault()
 
         const processImages = async () => {
           for (const item of imageItems) {
             const file = item.getAsFile()
-            if (!file) continue
-
-            // 파일 크기 검증 (5MB)
-            if (file.size > 5 * 1024 * 1024) {
-              continue
-            }
+            if (!file || file.size > 5 * 1024 * 1024) continue
 
             try {
               const url = await onImageUpload(file)
-              // 에디터에 이미지 삽입
               const { state } = view
               const { tr } = state
               const pos = state.selection.from
-
-              // Image 노드 생성 및 삽입
               const node = state.schema.nodes.image?.create({ src: url })
-              if (node) {
-                view.dispatch(tr.insert(pos, node))
-              }
+              if (node) view.dispatch(tr.insert(pos, node))
             } catch {
               // 에러 처리는 onImageUpload에서 담당
             }
@@ -154,13 +90,23 @@ export function RichTextEditor({
         return true
       },
       attributes: {
-        class:
-          'prose prose-slate dark:prose-invert max-w-none focus:outline-none min-h-[200px] p-4',
+        class: 'prose prose-slate dark:prose-invert max-w-none focus:outline-none min-h-[200px] p-4',
         role: 'textbox',
         'aria-multiline': 'true',
       },
     },
   })
+
+  // 외부에서 content prop이 변경되면 에디터 내용 동기화
+  useEffect(() => {
+    if (!editor) return
+
+    // 에디터 현재 내용과 prop 내용이 다를 때만 업데이트
+    const currentContent = editor.getHTML()
+    if (content !== currentContent) {
+      editor.commands.setContent(content, { emitUpdate: false })
+    }
+  }, [content, editor])
 
   const handleImageUpload = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -174,25 +120,15 @@ export function RichTextEditor({
         // 에러 처리는 onImageUpload에서 담당
       }
 
-      // 파일 입력 초기화
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ''
-      }
+      if (fileInputRef.current) fileInputRef.current.value = ''
     },
     [editor, onImageUpload]
   )
 
-  const handleImageButtonClick = () => {
-    fileInputRef.current?.click()
-  }
-
-  // Drag & Drop 핸들러
   const handleDragEnter = useCallback((e: DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     e.stopPropagation()
-    if (e.dataTransfer.types.includes('Files')) {
-      setIsDragging(true)
-    }
+    if (e.dataTransfer.types.includes('Files')) setIsDragging(true)
   }, [])
 
   const handleDragLeave = useCallback((e: DragEvent<HTMLDivElement>) => {
@@ -217,21 +153,13 @@ export function RichTextEditor({
       const files = e.dataTransfer.files
       if (!files || files.length === 0) return
 
-      // 이미지 파일만 필터링
-      const imageFiles = Array.from(files).filter((file) =>
-        file.type.startsWith('image/')
-      )
-
+      const imageFiles = Array.from(files).filter((file) => file.type.startsWith('image/'))
       if (imageFiles.length === 0) return
 
       setIsUploadingDrop(true)
       try {
         for (const file of imageFiles) {
-          // 파일 크기 검증 (5MB)
-          if (file.size > 5 * 1024 * 1024) {
-            continue
-          }
-
+          if (file.size > 5 * 1024 * 1024) continue
           const url = await onImageUpload(file)
           editor.chain().focus().setImage({ src: url }).run()
         }
@@ -244,9 +172,7 @@ export function RichTextEditor({
     [editor, onImageUpload]
   )
 
-  if (!editor) {
-    return null
-  }
+  if (!editor) return null
 
   return (
     <div className="w-full">
@@ -263,142 +189,11 @@ export function RichTextEditor({
         `}
       >
         {editable && (
-          <div className="flex flex-wrap gap-1 p-2 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
-            {/* 헤딩 */}
-            <ToolbarButton
-              onClick={() =>
-                editor.chain().focus().toggleHeading({ level: 1 }).run()
-              }
-              isActive={editor.isActive('heading', { level: 1 })}
-              title="제목 1 (H1)"
-            >
-              <Icon name="format_h1" size="sm" />
-            </ToolbarButton>
-            <ToolbarButton
-              onClick={() =>
-                editor.chain().focus().toggleHeading({ level: 2 }).run()
-              }
-              isActive={editor.isActive('heading', { level: 2 })}
-              title="제목 2 (H2)"
-            >
-              <Icon name="format_h2" size="sm" />
-            </ToolbarButton>
-            <ToolbarButton
-              onClick={() =>
-                editor.chain().focus().toggleHeading({ level: 3 }).run()
-              }
-              isActive={editor.isActive('heading', { level: 3 })}
-              title="제목 3 (H3)"
-            >
-              <Icon name="format_h3" size="sm" />
-            </ToolbarButton>
-
-            <div className="w-px h-6 bg-slate-300 dark:bg-slate-600 mx-1 self-center" />
-
-            {/* 텍스트 스타일 */}
-            <ToolbarButton
-              onClick={() => editor.chain().focus().toggleBold().run()}
-              isActive={editor.isActive('bold')}
-              title="굵게 (Ctrl+B)"
-            >
-              <Icon name="format_bold" size="sm" />
-            </ToolbarButton>
-            <ToolbarButton
-              onClick={() => editor.chain().focus().toggleItalic().run()}
-              isActive={editor.isActive('italic')}
-              title="기울임 (Ctrl+I)"
-            >
-              <Icon name="format_italic" size="sm" />
-            </ToolbarButton>
-            <ToolbarButton
-              onClick={() => editor.chain().focus().toggleUnderline().run()}
-              isActive={editor.isActive('underline')}
-              title="밑줄 (Ctrl+U)"
-            >
-              <Icon name="format_underlined" size="sm" />
-            </ToolbarButton>
-            <ToolbarButton
-              onClick={() => editor.chain().focus().toggleStrike().run()}
-              isActive={editor.isActive('strike')}
-              title="취소선"
-            >
-              <Icon name="strikethrough_s" size="sm" />
-            </ToolbarButton>
-
-            <div className="w-px h-6 bg-slate-300 dark:bg-slate-600 mx-1 self-center" />
-
-            {/* 목록 */}
-            <ToolbarButton
-              onClick={() => editor.chain().focus().toggleBulletList().run()}
-              isActive={editor.isActive('bulletList')}
-              title="글머리 기호 목록"
-            >
-              <Icon name="format_list_bulleted" size="sm" />
-            </ToolbarButton>
-            <ToolbarButton
-              onClick={() => editor.chain().focus().toggleOrderedList().run()}
-              isActive={editor.isActive('orderedList')}
-              title="번호 매기기 목록"
-            >
-              <Icon name="format_list_numbered" size="sm" />
-            </ToolbarButton>
-
-            <div className="w-px h-6 bg-slate-300 dark:bg-slate-600 mx-1 self-center" />
-
-            {/* 블록 */}
-            <ToolbarButton
-              onClick={() => editor.chain().focus().toggleBlockquote().run()}
-              isActive={editor.isActive('blockquote')}
-              title="인용문"
-            >
-              <Icon name="format_quote" size="sm" />
-            </ToolbarButton>
-            <ToolbarButton
-              onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-              isActive={editor.isActive('codeBlock')}
-              title="코드 블록"
-            >
-              <Icon name="code" size="sm" />
-            </ToolbarButton>
-            <ToolbarButton
-              onClick={() => editor.chain().focus().setHorizontalRule().run()}
-              title="구분선"
-            >
-              <Icon name="horizontal_rule" size="sm" />
-            </ToolbarButton>
-
-            <div className="w-px h-6 bg-slate-300 dark:bg-slate-600 mx-1 self-center" />
-
-            {/* 이미지 */}
-            <ToolbarButton onClick={handleImageButtonClick} title="이미지 삽입">
-              <Icon name="image" size="sm" />
-            </ToolbarButton>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              className="hidden"
-            />
-
-            <div className="w-px h-6 bg-slate-300 dark:bg-slate-600 mx-1 self-center" />
-
-            {/* 실행 취소 / 다시 실행 */}
-            <ToolbarButton
-              onClick={() => editor.chain().focus().undo().run()}
-              disabled={!editor.can().undo()}
-              title="실행 취소 (Ctrl+Z)"
-            >
-              <Icon name="undo" size="sm" />
-            </ToolbarButton>
-            <ToolbarButton
-              onClick={() => editor.chain().focus().redo().run()}
-              disabled={!editor.can().redo()}
-              title="다시 실행 (Ctrl+Y)"
-            >
-              <Icon name="redo" size="sm" />
-            </ToolbarButton>
-          </div>
+          <EditorToolbar
+            editor={editor}
+            fileInputRef={fileInputRef}
+            onImageUpload={handleImageUpload}
+          />
         )}
 
         <div
@@ -424,10 +219,7 @@ export function RichTextEditor({
               </div>
             </div>
           )}
-          <EditorContent
-            editor={editor}
-            className="bg-white dark:bg-slate-800"
-          />
+          <EditorContent editor={editor} className="bg-white dark:bg-slate-800" />
         </div>
       </div>
       {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
