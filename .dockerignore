@@ -1,0 +1,17 @@
+node_modules
+.next
+.git
+.gitignore
+.env
+.env.local
+.env.production
+*.md
+PLAN.md
+ref/
+stitch_it_engineer_mini_homepage_alternative/
+docs/
+coverage/
+playwright-report/
+test-results/
+src/**/*.test.ts
+src/**/*.test.tsx
