@@ -100,22 +100,24 @@ model BoardCategory {
 }
 
 model Post {
-  id           Int           @id @default(autoincrement()) @db.UnsignedInt
-  categoryId   Int           @map("category_id") @db.UnsignedInt
-  userId       Int?          @map("user_id") @db.UnsignedInt
-  title        String        @db.VarChar(200)
-  content      String        @db.MediumText
-  viewCount    Int?          @default(0) @map("view_count") @db.UnsignedInt
-  likeCount    Int?          @default(0) @map("like_count") @db.UnsignedInt
-  commentCount Int?          @default(0) @map("comment_count") @db.UnsignedInt
-  isPinned     Boolean?      @default(false) @map("is_pinned")
-  isPrivate    Boolean?      @default(false) @map("is_private")
-  isDeleted    Boolean?      @default(false) @map("is_deleted")
-  createdAt    DateTime?     @default(now()) @map("created_at") @db.DateTime(0)
-  updatedAt    DateTime?     @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
-  comments     Comment[]
-  category     BoardCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "posts_ibfk_1")
-  user         User?         @relation(fields: [userId], references: [id], onUpdate: Restrict, map: "posts_ibfk_2")
+  id            Int           @id @default(autoincrement()) @db.UnsignedInt
+  categoryId    Int           @map("category_id") @db.UnsignedInt
+  userId        Int?          @map("user_id") @db.UnsignedInt
+  guestName     String?       @map("guest_name") @db.VarChar(50)
+  guestPassword String?       @map("guest_password") @db.VarChar(255)
+  title         String        @db.VarChar(200)
+  content       String        @db.MediumText
+  viewCount     Int?          @default(0) @map("view_count") @db.UnsignedInt
+  likeCount     Int?          @default(0) @map("like_count") @db.UnsignedInt
+  commentCount  Int?          @default(0) @map("comment_count") @db.UnsignedInt
+  isPinned      Boolean?      @default(false) @map("is_pinned")
+  isPrivate     Boolean?      @default(false) @map("is_private")
+  isDeleted     Boolean?      @default(false) @map("is_deleted")
+  createdAt     DateTime?     @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt     DateTime?     @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
+  comments      Comment[]
+  category      BoardCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "posts_ibfk_1")
+  user          User?         @relation(fields: [userId], references: [id], onUpdate: Restrict, map: "posts_ibfk_2")
 
   @@index([categoryId], map: "idx_posts_category")
   @@index([createdAt], map: "idx_posts_created")
@@ -125,20 +127,22 @@ model Post {
 }
 
 model Comment {
-  id        Int       @id @default(autoincrement()) @db.UnsignedInt
-  postId    Int       @map("post_id") @db.UnsignedInt
-  userId    Int?      @map("user_id") @db.UnsignedInt
-  parentId  Int?      @map("parent_id") @db.UnsignedInt
-  content   String    @db.Text
-  depth     Int?      @default(0) @db.UnsignedTinyInt
-  likeCount Int?      @default(0) @map("like_count") @db.UnsignedInt
-  isDeleted Boolean?  @default(false) @map("is_deleted")
-  createdAt DateTime? @default(now()) @map("created_at") @db.DateTime(0)
-  updatedAt DateTime? @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
-  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "comments_ibfk_1")
-  user      User?     @relation(fields: [userId], references: [id], onUpdate: Restrict, map: "comments_ibfk_2")
-  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "comments_ibfk_3")
-  replies   Comment[] @relation("CommentReplies")
+  id            Int       @id @default(autoincrement()) @db.UnsignedInt
+  postId        Int       @map("post_id") @db.UnsignedInt
+  userId        Int?      @map("user_id") @db.UnsignedInt
+  guestName     String?   @map("guest_name") @db.VarChar(50)
+  guestPassword String?   @map("guest_password") @db.VarChar(255)
+  parentId      Int?      @map("parent_id") @db.UnsignedInt
+  content       String    @db.Text
+  depth         Int?      @default(0) @db.UnsignedTinyInt
+  likeCount     Int?      @default(0) @map("like_count") @db.UnsignedInt
+  isDeleted     Boolean?  @default(false) @map("is_deleted")
+  createdAt     DateTime? @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt     DateTime? @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
+  post          Post      @relation(fields: [postId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "comments_ibfk_1")
+  user          User?     @relation(fields: [userId], references: [id], onUpdate: Restrict, map: "comments_ibfk_2")
+  parent        Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "comments_ibfk_3")
+  replies       Comment[] @relation("CommentReplies")
 
   @@index([parentId], map: "idx_comments_parent")
   @@index([postId, createdAt], map: "idx_comments_post")
@@ -163,15 +167,17 @@ model DiaryEntry {
 }
 
 model Like {
-  id         Int        @id @default(autoincrement()) @db.UnsignedInt
-  userId     Int        @map("user_id") @db.UnsignedInt
-  targetType TargetType @map("target_type")
-  targetId   Int        @map("target_id") @db.UnsignedInt
-  createdAt  DateTime?  @default(now()) @map("created_at") @db.DateTime(0)
-  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "likes_ibfk_1")
+  id          Int        @id @default(autoincrement()) @db.UnsignedInt
+  userId      Int?       @map("user_id") @db.UnsignedInt
+  anonymousId String?    @map("anonymous_id") @db.VarChar(100)
+  targetType  TargetType @map("target_type")
+  targetId    Int        @map("target_id") @db.UnsignedInt
+  createdAt   DateTime?  @default(now()) @map("created_at") @db.DateTime(0)
+  user        User?      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "likes_ibfk_1")
 
   @@unique([userId, targetType, targetId], name: "uk_likes_user_target", map: "uk_likes_user_target")
   @@index([targetType, targetId], map: "idx_likes_target")
+  @@index([anonymousId, targetType, targetId], map: "idx_likes_anonymous")
   @@map("likes")
 }
 
@@ -310,4 +316,22 @@ model PortfolioTag {
   @@id([portfolioId, tagId])
   @@index([tagId], map: "idx_portfolio_tag_tag")
   @@map("portfolio_tags")
+}
+
+model BgmTrack {
+  id           Int       @id @default(autoincrement()) @db.UnsignedInt
+  title        String    @db.VarChar(200)
+  artist       String?   @db.VarChar(200)
+  filename     String    @db.VarChar(255)
+  originalName String    @map("original_name") @db.VarChar(255)
+  url          String    @db.VarChar(500)
+  fileSize     Int?      @map("file_size") @db.UnsignedInt
+  duration     Int?      @db.UnsignedInt
+  sortOrder    Int?      @default(0) @map("sort_order")
+  isActive     Boolean?  @default(true) @map("is_active")
+  createdAt    DateTime? @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt    DateTime? @default(now()) @updatedAt @map("updated_at") @db.DateTime(0)
+
+  @@index([isActive, sortOrder], map: "idx_bgm_active_order")
+  @@map("bgm_tracks")
 }

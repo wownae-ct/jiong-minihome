@@ -152,7 +152,7 @@ export function ImageDropZone({
                             <Icon
                                 name="edit"
                                 size="sm"
-                                className="inline mr-1 flex items-center justify-center"
+                                className="inline mr-1"
                             />
                             변경
                         </button>

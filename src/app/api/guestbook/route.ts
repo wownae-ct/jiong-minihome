@@ -3,14 +3,13 @@ import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { guestbookSchema } from '@/lib/validations/guestbook'
+import { parsePagination } from '@/lib/api/helpers'
 
 // GET: 방명록 목록 조회
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '10')
-    const skip = (page - 1) * limit
+    const { page, limit, skip } = parsePagination(searchParams)
 
     const session = await auth()
 

@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { Icon } from '@/components/ui/Icon'
-import { Button } from '@/components/ui/Button'
-import { Modal } from '@/components/ui/Modal'
 import { useToast } from '@/components/providers/ToastProvider'
 import { LikeButton } from '@/components/common/LikeButton'
+import { PasswordModal } from '@/components/common/PasswordModal'
+import { DeleteConfirmModal } from '@/components/common/DeleteConfirmModal'
 
 interface PostDetailProps {
   post: {
@@ -23,6 +23,7 @@ interface PostDetailProps {
     createdAt: string
     updatedAt: string
     userId: number | null
+    guestName?: string | null
     user: {
       id: number
       nickname: string
@@ -35,20 +36,26 @@ interface PostDetailProps {
     }
   }
   onBack?: () => void
-  onEdit?: () => void
+  onEdit?: (guestPassword?: string) => void
   onDelete?: () => void
+  onMemberClick?: (userId: number) => void
 }
 
-export function PostDetail({ post, onBack, onEdit, onDelete }: PostDetailProps) {
+export function PostDetail({ post, onBack, onEdit, onDelete, onMemberClick }: PostDetailProps) {
   const router = useRouter()
   const { data: session } = useSession()
   const { success, error: showError } = useToast()
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [passwordAction, setPasswordAction] = useState<'edit' | 'delete'>('delete')
   const [isDeleting, setIsDeleting] = useState(false)
 
   const isOwner = session?.user?.id === String(post.userId)
   const isAdmin = session?.user?.role === 'admin'
-  const canEdit = isOwner || isAdmin
+  const isGuestPost = !post.userId && !!post.guestName
+  const canEdit = isOwner || isAdmin || isGuestPost
+
+  const authorName = post.user?.nickname || post.guestName || '알 수 없음'
 
   const formattedDate = new Date(post.createdAt).toLocaleDateString('ko-KR', {
     year: 'numeric',
@@ -58,12 +65,48 @@ export function PostDetail({ post, onBack, onEdit, onDelete }: PostDetailProps) 
     minute: '2-digit',
   })
 
-  const handleDelete = async () => {
+  const handleEditClick = () => {
+    if (isGuestPost && !isAdmin) {
+      setPasswordAction('edit')
+      setShowPasswordModal(true)
+    } else if (onEdit) {
+      onEdit()
+    }
+  }
+
+  const handleDeleteClick = () => {
+    if (isGuestPost && !isAdmin) {
+      setPasswordAction('delete')
+      setShowPasswordModal(true)
+    } else {
+      setShowDeleteModal(true)
+    }
+  }
+
+  const handlePasswordConfirm = async (password: string) => {
+    if (!password.trim()) {
+      showError('비밀번호를 입력해주세요')
+      return
+    }
+
+    if (passwordAction === 'edit') {
+      setShowPasswordModal(false)
+      onEdit?.(password)
+    } else {
+      await performDelete(password)
+    }
+  }
+
+  const performDelete = async (password?: string) => {
     setIsDeleting(true)
     try {
-      const response = await fetch(`/api/posts/${post.id}`, {
-        method: 'DELETE',
-      })
+      const options: RequestInit = { method: 'DELETE' }
+      if (password) {
+        options.headers = { 'Content-Type': 'application/json' }
+        options.body = JSON.stringify({ password })
+      }
+
+      const response = await fetch(`/api/posts/${post.id}`, options)
 
       if (!response.ok) {
         const result = await response.json()
@@ -72,6 +115,8 @@ export function PostDetail({ post, onBack, onEdit, onDelete }: PostDetailProps) 
       }
 
       success('게시글이 삭제되었습니다')
+      setShowPasswordModal(false)
+      setShowDeleteModal(false)
       if (onDelete) {
         onDelete()
       } else {
@@ -111,29 +156,50 @@ export function PostDetail({ post, onBack, onEdit, onDelete }: PostDetailProps) 
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
             {post.title}
           </h1>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              {post.user?.profileImage ? (
-                <img
-                  src={post.user.profileImage}
-                  alt={post.user.nickname}
-                  className="w-10 h-10 rounded-full object-cover"
-                />
+              {post.user && onMemberClick ? (
+                <button
+                  onClick={() => onMemberClick(post.user!.id)}
+                  className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+                >
+                  {post.user.profileImage ? (
+                    <img
+                      src={post.user.profileImage}
+                      alt={post.user.nickname}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
+                      {post.user.nickname[0]?.toUpperCase() || '?'}
+                    </div>
+                  )}
+                  <div className="text-left">
+                    <p className="font-medium text-slate-900 dark:text-slate-100 hover:text-primary hover:underline transition-colors">
+                      {post.user.nickname}
+                    </p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      {formattedDate}
+                    </p>
+                  </div>
+                </button>
               ) : (
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
-                  {post.user?.nickname?.[0]?.toUpperCase() || '?'}
-                </div>
+                <>
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
+                    {authorName[0]?.toUpperCase() || '?'}
+                  </div>
+                  <div>
+                    <p className="font-medium text-slate-900 dark:text-slate-100">
+                      {authorName}
+                    </p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      {formattedDate}
+                    </p>
+                  </div>
+                </>
               )}
-              <div>
-                <p className="font-medium text-slate-900 dark:text-slate-100">
-                  {post.user?.nickname || '알 수 없음'}
-                </p>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  {formattedDate}
-                </p>
-              </div>
             </div>
-            <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-400">
+            <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-400 shrink-0">
               <span className="flex items-center gap-1">
                 <Icon name="visibility" size="sm" />
                 {post.viewCount}
@@ -181,23 +247,14 @@ export function PostDetail({ post, onBack, onEdit, onDelete }: PostDetailProps) 
 
           {canEdit && (
             <div className="flex items-center gap-2">
-              {onEdit ? (
-                <button
-                  onClick={onEdit}
-                  className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg"
-                >
-                  수정
-                </button>
-              ) : (
-                <Link
-                  href={`/community/write?edit=${post.id}`}
-                  className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg"
-                >
-                  수정
-                </Link>
-              )}
               <button
-                onClick={() => setShowDeleteModal(true)}
+                onClick={handleEditClick}
+                className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg"
+              >
+                수정
+              </button>
+              <button
+                onClick={handleDeleteClick}
                 className="px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
               >
                 삭제
@@ -207,35 +264,25 @@ export function PostDetail({ post, onBack, onEdit, onDelete }: PostDetailProps) 
         </div>
       </div>
 
-      {/* 삭제 확인 모달 */}
-      <Modal
+      {/* 비밀번호 확인 모달 (비회원 글) */}
+      <PasswordModal
+        isOpen={showPasswordModal}
+        onClose={() => setShowPasswordModal(false)}
+        onConfirm={handlePasswordConfirm}
+        title={passwordAction === 'edit' ? '게시글 수정' : '게시글 삭제'}
+        isLoading={isDeleting}
+        confirmVariant={passwordAction === 'delete' ? 'danger' : 'primary'}
+      />
+
+      {/* 삭제 확인 모달 (회원 글) */}
+      <DeleteConfirmModal
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
+        onConfirm={() => performDelete()}
         title="게시글 삭제"
-        size="sm"
-      >
-        <div className="space-y-4">
-          <p className="text-slate-600 dark:text-slate-400">
-            정말 이 게시글을 삭제하시겠습니까?
-          </p>
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="ghost"
-              onClick={() => setShowDeleteModal(false)}
-              disabled={isDeleting}
-            >
-              취소
-            </Button>
-            <Button
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className="bg-red-500 hover:bg-red-600"
-            >
-              {isDeleting ? '삭제 중...' : '삭제'}
-            </Button>
-          </div>
-        </div>
-      </Modal>
+        message="정말 이 게시글을 삭제하시겠습니까?"
+        isLoading={isDeleting}
+      />
     </>
   )
 }

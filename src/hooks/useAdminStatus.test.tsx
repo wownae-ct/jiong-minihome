@@ -1,6 +1,4 @@
 import { renderHook, act, waitFor } from '@testing-library/react'
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-
 // next-auth/react 모킹
 vi.mock('next-auth/react', () => ({
   useSession: vi.fn(),

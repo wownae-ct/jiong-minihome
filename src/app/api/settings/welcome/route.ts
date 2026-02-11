@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { requireAdmin, formatZodError } from "@/lib/api/helpers";
 import prisma from "@/lib/prisma";
 import { z } from "zod";
 
@@ -116,28 +116,15 @@ export async function GET() {
 // PUT: 환영 섹션 설정 수정 (관리자 전용)
 export async function PUT(request: NextRequest) {
     try {
-        const session = await auth();
-
-        if (!session?.user) {
-            return NextResponse.json(
-                { error: "로그인이 필요합니다." },
-                { status: 401 },
-            );
-        }
-
-        if (session.user.role !== "admin") {
-            return NextResponse.json(
-                { error: "권한이 없습니다." },
-                { status: 403 },
-            );
-        }
+        const { session, error } = await requireAdmin();
+        if (error) return error;
 
         const body = await request.json();
         const validation = welcomeSettingsSchema.safeParse(body);
 
         if (!validation.success) {
             return NextResponse.json(
-                { error: validation.error.issues[0].message },
+                { error: formatZodError(validation.error) },
                 { status: 400 },
             );
         }

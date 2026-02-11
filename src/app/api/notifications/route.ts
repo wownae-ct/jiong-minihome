@@ -1,18 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/api/helpers'
 import { prisma } from '@/lib/prisma'
-import { auth } from '@/lib/auth'
 
 // GET: 알림 목록 조회
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth()
-
-    if (!session) {
-      return NextResponse.json(
-        { error: '로그인이 필요합니다' },
-        { status: 401 }
-      )
-    }
+    const { session, error } = await requireAuth()
+    if (error) return error
 
     const { searchParams } = new URL(request.url)
     const limit = parseInt(searchParams.get('limit') || '20')
@@ -62,14 +56,8 @@ export async function GET(request: NextRequest) {
 // PUT: 알림 읽음 처리
 export async function PUT(request: NextRequest) {
   try {
-    const session = await auth()
-
-    if (!session) {
-      return NextResponse.json(
-        { error: '로그인이 필요합니다' },
-        { status: 401 }
-      )
-    }
+    const { session, error } = await requireAuth()
+    if (error) return error
 
     const body = await request.json()
     const { notificationId, markAllRead } = body

@@ -1,5 +1,3 @@
-import { redirect } from 'next/navigation'
-import { auth } from '@/lib/auth'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { Sidebar } from '@/components/sidebar/Sidebar'
 import { PostForm } from '@/components/community/PostForm'
@@ -10,12 +8,6 @@ export const metadata = {
 }
 
 export default async function WritePage() {
-  const session = await auth()
-
-  if (!session) {
-    redirect('/login?callbackUrl=/community/write')
-  }
-
   return (
     <MainLayout sidebar={<Sidebar />}>
       <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 md:p-8 border border-slate-200 dark:border-slate-700">

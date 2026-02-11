@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import {
   profileSchema,
@@ -8,6 +7,7 @@ import {
   profileKeyToSettingKey,
   settingKeyToProfileKey,
 } from '@/lib/validations/profile'
+import { requireAdmin, formatZodError } from '@/lib/api/helpers'
 
 export async function GET() {
   try {
@@ -44,22 +44,15 @@ export async function GET() {
 
 export async function PUT(request: NextRequest) {
   try {
-    const session = await auth()
-
-    if (!session?.user) {
-      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
-    }
-
-    if (session.user.role !== 'admin') {
-      return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 403 })
-    }
+    const { session, error: authError } = await requireAdmin()
+    if (authError) return authError
 
     const body = await request.json()
     const result = profileSchema.safeParse(body)
 
     if (!result.success) {
       return NextResponse.json(
-        { error: '유효하지 않은 데이터입니다.', details: result.error.flatten() },
+        { error: formatZodError(result.error) },
         { status: 400 }
       )
     }

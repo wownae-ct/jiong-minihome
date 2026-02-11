@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
+import { parseId, verifyGuestPassword } from '@/lib/api/helpers'
 
 // DELETE: 방명록 삭제
 export async function DELETE(
@@ -10,7 +10,8 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
-    const entryId = parseInt(id)
+    const { id: entryId, error: idError } = parseId(id)
+    if (idError) return idError
     const session = await auth()
 
     const entry = await prisma.guestbookEntry.findUnique({
@@ -38,29 +39,8 @@ export async function DELETE(
     } else {
       // 비회원 작성글인 경우 - 비밀번호 확인
       const body = await request.json().catch(() => ({}))
-      const { password } = body
-
-      if (!password) {
-        return NextResponse.json(
-          { error: '비밀번호를 입력해주세요' },
-          { status: 400 }
-        )
-      }
-
-      const isValidPassword = await bcrypt.compare(
-        password,
-        entry.guestPassword || ''
-      )
-
-      if (!isValidPassword) {
-        // 관리자는 비밀번호 없이 삭제 가능
-        if (session?.user?.role !== 'admin') {
-          return NextResponse.json(
-            { error: '비밀번호가 올바르지 않습니다' },
-            { status: 403 }
-          )
-        }
-      }
+      const passwordError = await verifyGuestPassword(entry.guestPassword, body.password, session)
+      if (passwordError) return passwordError
     }
 
     // Soft delete

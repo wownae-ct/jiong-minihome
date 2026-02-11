@@ -34,5 +34,18 @@ export const signInSchema = z.object({
   password: z.string().min(1, '비밀번호를 입력해주세요'),
 })
 
+export const findEmailSchema = z.object({
+  nickname: z.string().min(1, '닉네임을 입력해주세요'),
+})
+
+export const resetPasswordSchema = z.object({
+  email: z
+    .string()
+    .min(1, '이메일을 입력해주세요')
+    .email('올바른 이메일 형식이 아닙니다'),
+})
+
 export type SignUpInput = z.infer<typeof signUpSchema>
 export type SignInInput = z.infer<typeof signInSchema>
+export type FindEmailInput = z.infer<typeof findEmailSchema>
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
+import { requireAdmin, parseId } from '@/lib/api/helpers'
 
 const updateUserSchema = z.object({
   role: z.enum(['admin', 'user']).optional(),
@@ -13,22 +13,12 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await auth()
-
-    if (!session?.user) {
-      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
-    }
-
-    if (session.user.role !== 'admin') {
-      return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 403 })
-    }
+    const { session, error: authError } = await requireAdmin()
+    if (authError) return authError
 
     const { id } = await params
-    const userId = parseInt(id)
-
-    if (isNaN(userId)) {
-      return NextResponse.json({ error: '유효하지 않은 ID입니다.' }, { status: 400 })
-    }
+    const { id: userId, error: idError } = parseId(id)
+    if (idError) return idError
 
     const body = await request.json()
     const result = updateUserSchema.safeParse(body)
@@ -72,22 +62,12 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await auth()
-
-    if (!session?.user) {
-      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
-    }
-
-    if (session.user.role !== 'admin') {
-      return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 403 })
-    }
+    const { session, error: authError } = await requireAdmin()
+    if (authError) return authError
 
     const { id } = await params
-    const userId = parseInt(id)
-
-    if (isNaN(userId)) {
-      return NextResponse.json({ error: '유효하지 않은 ID입니다.' }, { status: 400 })
-    }
+    const { id: userId, error: idError } = parseId(id)
+    if (idError) return idError
 
     // 자기 자신은 삭제 불가
     if (userId === parseInt(session.user.id)) {

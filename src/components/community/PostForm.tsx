@@ -2,9 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { postSchema, PostInput } from '@/lib/validations/post'
+import { postSchema, guestPostSchema, type PostInput, type GuestPostInput } from '@/lib/validations/post'
+
+type PostFormData = PostInput & Partial<Pick<GuestPostInput, 'guestName' | 'guestPassword'>>
 import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Textarea'
 import { Button } from '@/components/ui/Button'
@@ -23,23 +26,29 @@ interface PostFormProps {
     content: string
     categoryId: number
     isPrivate: boolean
+    isGuestPost?: boolean
   }
+  guestPassword?: string
   onCancel?: () => void
   onSuccess?: () => void
 }
 
-export function PostForm({ initialData, onCancel, onSuccess }: PostFormProps) {
+export function PostForm({ initialData, guestPassword, onCancel, onSuccess }: PostFormProps) {
   const router = useRouter()
+  const { data: session } = useSession()
   const { success, error: showError } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [categories, setCategories] = useState<Category[]>([])
+
+  const isGuest = !session
+  const isGuestEdit = initialData?.isGuestPost && isGuest
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<PostInput>({
-    resolver: zodResolver(postSchema),
+  } = useForm<PostFormData>({
+    resolver: zodResolver(isGuest && !initialData ? guestPostSchema : postSchema),
     defaultValues: initialData || {
       isPrivate: false,
     },
@@ -52,7 +61,7 @@ export function PostForm({ initialData, onCancel, onSuccess }: PostFormProps) {
       .catch(console.error)
   }, [])
 
-  const onSubmit = async (data: PostInput) => {
+  const onSubmit = async (data: PostFormData) => {
     setIsLoading(true)
     try {
       const url = initialData
@@ -60,10 +69,15 @@ export function PostForm({ initialData, onCancel, onSuccess }: PostFormProps) {
         : '/api/posts'
       const method = initialData ? 'PUT' : 'POST'
 
+      // 비회원 글 수정 시 비밀번호 포함
+      const bodyData = initialData && (isGuestEdit || initialData.isGuestPost)
+        ? { ...data, password: guestPassword }
+        : data
+
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify(bodyData),
       })
 
       const result = await response.json()
@@ -89,6 +103,25 @@ export function PostForm({ initialData, onCancel, onSuccess }: PostFormProps) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      {/* 비로그인 시 닉네임/비밀번호 입력 */}
+      {isGuest && !initialData && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600">
+          <Input
+            label="닉네임"
+            placeholder="닉네임을 입력하세요"
+            error={errors.guestName?.message}
+            {...register('guestName')}
+          />
+          <Input
+            label="비밀번호"
+            type="password"
+            placeholder="수정/삭제용 비밀번호"
+            error={errors.guestPassword?.message}
+            {...register('guestPassword')}
+          />
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">

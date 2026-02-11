@@ -30,7 +30,7 @@ export function Button({
 }: ButtonProps) {
   return (
     <button
-      className={`transition-all flex items-center gap-2 ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
+      className={`transition-all flex items-center gap-2 whitespace-nowrap shrink-0 ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
       {...props}
     >
       {icon && <Icon name={icon} size="sm" />}

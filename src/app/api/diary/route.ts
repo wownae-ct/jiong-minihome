@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
+import { requireAdmin, formatZodError } from '@/lib/api/helpers'
 
 const diarySchema = z.object({
   title: z.string().max(200).optional(),
@@ -13,10 +14,12 @@ const diarySchema = z.object({
 
 export async function GET() {
   try {
+    const session = await auth()
+    const isAdmin = session?.user?.role === 'admin'
+
     const entries = await prisma.diaryEntry.findMany({
-      where: { isPublic: true },
+      where: isAdmin ? {} : { isPublic: true },
       orderBy: { createdAt: 'desc' },
-      take: 10,
       include: {
         user: {
           select: {
@@ -33,22 +36,15 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth()
-
-    if (!session?.user) {
-      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
-    }
-
-    if (session.user.role !== 'admin') {
-      return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 403 })
-    }
+    const { session, error: authError } = await requireAdmin()
+    if (authError) return authError
 
     const body = await request.json()
     const result = diarySchema.safeParse(body)
 
     if (!result.success) {
       return NextResponse.json(
-        { error: '유효하지 않은 데이터입니다.', details: result.error.flatten() },
+        { error: formatZodError(result.error) },
         { status: 400 }
       )
     }

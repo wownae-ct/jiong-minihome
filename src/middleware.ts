@@ -3,7 +3,6 @@ import { NextResponse } from 'next/server'
 
 // 로그인이 필요한 경로
 const protectedRoutes = [
-  '/community/write',
   '/diary/write',
   '/settings',
 ]

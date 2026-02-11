@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -21,6 +21,14 @@ interface DiaryWriteModalProps {
   isOpen: boolean
   onClose: () => void
   onSuccess?: () => void
+  editEntry?: {
+    id: number
+    title: string | null
+    content: string
+    mood: string | null
+    weather: string | null
+    isPublic: boolean
+  }
 }
 
 const moodOptions = [
@@ -38,9 +46,10 @@ const weatherOptions = [
   { value: 'snowy', label: '눈', icon: 'ac_unit' },
 ]
 
-export function DiaryWriteModal({ isOpen, onClose, onSuccess }: DiaryWriteModalProps) {
+export function DiaryWriteModal({ isOpen, onClose, onSuccess, editEntry }: DiaryWriteModalProps) {
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const isEditMode = !!editEntry
 
   const {
     register,
@@ -60,6 +69,27 @@ export function DiaryWriteModal({ isOpen, onClose, onSuccess }: DiaryWriteModalP
     },
   })
 
+  // 편집 모드: editEntry가 변경되면 폼 값을 채움
+  useEffect(() => {
+    if (editEntry && isOpen) {
+      reset({
+        title: editEntry.title || '',
+        content: editEntry.content,
+        mood: (editEntry.mood as DiaryFormData['mood']) || undefined,
+        weather: (editEntry.weather as DiaryFormData['weather']) || undefined,
+        isPublic: editEntry.isPublic,
+      })
+    } else if (!editEntry && isOpen) {
+      reset({
+        title: '',
+        content: '',
+        mood: undefined,
+        weather: undefined,
+        isPublic: true,
+      })
+    }
+  }, [editEntry, isOpen, reset])
+
   const selectedMood = watch('mood')
   const selectedWeather = watch('weather')
 
@@ -68,8 +98,11 @@ export function DiaryWriteModal({ isOpen, onClose, onSuccess }: DiaryWriteModalP
     setIsSubmitting(true)
 
     try {
-      const response = await fetch('/api/diary', {
-        method: 'POST',
+      const url = isEditMode ? `/api/diary/${editEntry.id}` : '/api/diary'
+      const method = isEditMode ? 'PUT' : 'POST'
+
+      const response = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       })
@@ -77,11 +110,13 @@ export function DiaryWriteModal({ isOpen, onClose, onSuccess }: DiaryWriteModalP
       const result = await response.json()
 
       if (!response.ok) {
-        setError(result.error || '다이어리 작성에 실패했습니다.')
+        setError(result.error || (isEditMode ? '다이어리 수정에 실패했습니다.' : '다이어리 작성에 실패했습니다.'))
         return
       }
 
-      reset()
+      if (!isEditMode) {
+        reset()
+      }
       onSuccess?.()
       onClose()
     } catch {
@@ -96,7 +131,7 @@ export function DiaryWriteModal({ isOpen, onClose, onSuccess }: DiaryWriteModalP
   const labelClasses = 'block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1'
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="다이어리 쓰기" size="lg">
+    <Modal isOpen={isOpen} onClose={onClose} title={isEditMode ? '다이어리 수정' : '다이어리 쓰기'} size="lg">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {error && (
           <div className="p-3 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg text-sm">

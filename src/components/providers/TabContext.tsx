@@ -9,6 +9,9 @@ interface TabContextType {
   setActiveTab: (tab: TabId) => void
   portfolioDetailId: number | null
   setPortfolioDetail: (id: number | null) => void
+  communityPostId: number | null
+  setCommunityPost: (id: number | null, categorySlug?: string) => void
+  communityCategory: string | null
   welcomeDetailOpen: boolean
   setWelcomeDetail: (open: boolean) => void
   goBack: () => void
@@ -21,7 +24,18 @@ interface TabProviderProps {
   initialTab?: TabId
 }
 
-function parseHash(hash: string): { tab: TabId; detailId: number | null; welcomeDetail: boolean } {
+interface ParsedHash {
+  tab: TabId
+  detailId: number | null
+  welcomeDetail: boolean
+  communityPostId: number | null
+}
+
+interface ParsedUrl extends ParsedHash {
+  communityCategory: string | null
+}
+
+function parseHash(hash: string): ParsedHash {
   const cleanHash = hash.replace('#', '')
 
   // 환영 섹션 상세 보기
@@ -30,6 +44,7 @@ function parseHash(hash: string): { tab: TabId; detailId: number | null; welcome
       tab: 'intro',
       detailId: null,
       welcomeDetail: true,
+      communityPostId: null,
     }
   }
 
@@ -40,6 +55,18 @@ function parseHash(hash: string): { tab: TabId; detailId: number | null; welcome
       tab: 'portfolio',
       detailId: parseInt(portfolioMatch[1], 10),
       welcomeDetail: false,
+      communityPostId: null,
+    }
+  }
+
+  // 커뮤니티 게시글 상세 보기 형식: community-{id}
+  const communityMatch = cleanHash.match(/^community-(\d+)$/)
+  if (communityMatch) {
+    return {
+      tab: 'community',
+      detailId: null,
+      welcomeDetail: false,
+      communityPostId: parseInt(communityMatch[1], 10),
     }
   }
 
@@ -50,6 +77,7 @@ function parseHash(hash: string): { tab: TabId; detailId: number | null; welcome
       tab: cleanHash as TabId,
       detailId: null,
       welcomeDetail: false,
+      communityPostId: null,
     }
   }
 
@@ -58,47 +86,102 @@ function parseHash(hash: string): { tab: TabId; detailId: number | null; welcome
     tab: 'intro',
     detailId: null,
     welcomeDetail: false,
+    communityPostId: null,
+  }
+}
+
+function parsePathname(pathname: string): ParsedUrl | null {
+  const communityMatch = pathname.match(/^\/community\/([a-z]+)\/(\d+)$/)
+  if (communityMatch) {
+    return {
+      tab: 'community',
+      detailId: null,
+      welcomeDetail: false,
+      communityPostId: parseInt(communityMatch[2], 10),
+      communityCategory: communityMatch[1],
+    }
+  }
+  return null
+}
+
+function parseUrl(pathname: string, hash: string): ParsedUrl {
+  const pathResult = parsePathname(pathname)
+  if (pathResult) return pathResult
+
+  const hashResult = parseHash(hash)
+  return {
+    ...hashResult,
+    communityCategory: null,
   }
 }
 
 export function TabProvider({ children, initialTab = 'intro' }: TabProviderProps) {
   const [activeTab, setActiveTabState] = useState<TabId>(initialTab)
   const [portfolioDetailId, setPortfolioDetailIdState] = useState<number | null>(null)
+  const [communityPostId, setCommunityPostIdState] = useState<number | null>(null)
+  const [communityCategory, setCommunityCategory] = useState<string | null>(null)
   const [welcomeDetailOpen, setWelcomeDetailOpenState] = useState(false)
 
-  // 초기 해시 파싱
+  // 초기 URL 파싱 (해시 또는 경로 기반)
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const { tab, detailId, welcomeDetail } = parseHash(window.location.hash)
-      setActiveTabState(tab)
-      setPortfolioDetailIdState(detailId)
-      setWelcomeDetailOpenState(welcomeDetail)
+      const hasState = window.location.hash || window.location.pathname !== '/'
+      if (hasState) {
+        const { tab, detailId, welcomeDetail, communityPostId: postId, communityCategory: category } =
+          parseUrl(window.location.pathname, window.location.hash)
+        setActiveTabState(tab)
+        setPortfolioDetailIdState(detailId)
+        setWelcomeDetailOpenState(welcomeDetail)
+        setCommunityPostIdState(postId)
+        setCommunityCategory(category)
+      }
     }
   }, [])
 
-  // 해시 변경 감지 (브라우저 뒤로가기/앞으로가기)
+  // popstate 이벤트 감지 (브라우저 뒤로가기/앞으로가기)
   useEffect(() => {
-    const handleHashChange = () => {
-      const { tab, detailId, welcomeDetail } = parseHash(window.location.hash)
+    const handlePopState = () => {
+      const { tab, detailId, welcomeDetail, communityPostId: postId, communityCategory: category } =
+        parseUrl(window.location.pathname, window.location.hash)
       setActiveTabState(tab)
       setPortfolioDetailIdState(detailId)
       setWelcomeDetailOpenState(welcomeDetail)
+      setCommunityPostIdState(postId)
+      setCommunityCategory(category)
     }
 
-    window.addEventListener('hashchange', handleHashChange)
-    return () => window.removeEventListener('hashchange', handleHashChange)
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
   }, [])
 
-  // 탭 변경 (URL 해시 업데이트)
+  // 탭 변경 (절대 URL로 업데이트)
   const setActiveTab = useCallback((tab: TabId) => {
     setActiveTabState(tab)
     setPortfolioDetailIdState(null)
+    setCommunityPostIdState(null)
+    setCommunityCategory(null)
     setWelcomeDetailOpenState(false)
 
     if (tab === 'intro') {
-      window.history.pushState(null, '', window.location.pathname)
+      window.history.pushState(null, '', '/')
     } else {
-      window.history.pushState(null, '', `#${tab}`)
+      window.history.pushState(null, '', `/#${tab}`)
+    }
+  }, [])
+
+  // 커뮤니티 게시글 상세 보기 설정
+  const setCommunityPost = useCallback((id: number | null, categorySlug?: string) => {
+    setCommunityPostIdState(id)
+    setCommunityCategory(categorySlug || null)
+
+    if (id === null) {
+      window.history.pushState(null, '', '/#community')
+    } else if (categorySlug) {
+      setActiveTabState('community')
+      window.history.pushState(null, '', `/community/${categorySlug}/${id}`)
+    } else {
+      setActiveTabState('community')
+      window.history.pushState(null, '', `/#community-${id}`)
     }
   }, [])
 
@@ -107,10 +190,10 @@ export function TabProvider({ children, initialTab = 'intro' }: TabProviderProps
     setPortfolioDetailIdState(id)
 
     if (id === null) {
-      window.history.pushState(null, '', '#portfolio')
+      window.history.pushState(null, '', '/#portfolio')
     } else {
       setActiveTabState('portfolio')
-      window.history.pushState(null, '', `#portfolio-${id}`)
+      window.history.pushState(null, '', `/#portfolio-${id}`)
     }
   }, [])
 
@@ -120,9 +203,9 @@ export function TabProvider({ children, initialTab = 'intro' }: TabProviderProps
 
     if (open) {
       setActiveTabState('intro')
-      window.history.pushState(null, '', '#intro-detail')
+      window.history.pushState(null, '', '/#intro-detail')
     } else {
-      window.history.pushState(null, '', window.location.pathname)
+      window.history.pushState(null, '', '/')
     }
   }, [])
 
@@ -138,6 +221,9 @@ export function TabProvider({ children, initialTab = 'intro' }: TabProviderProps
         setActiveTab,
         portfolioDetailId,
         setPortfolioDetail,
+        communityPostId,
+        setCommunityPost,
+        communityCategory,
         welcomeDetailOpen,
         setWelcomeDetail,
         goBack,

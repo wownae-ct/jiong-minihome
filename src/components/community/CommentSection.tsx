@@ -12,6 +12,7 @@ interface CommentData {
   likeCount: number
   createdAt: string
   userId: number | null
+  guestName?: string | null
   user: {
     id: number
     nickname: string
@@ -22,6 +23,7 @@ interface CommentData {
 
 interface CommentSectionProps {
   postId: number
+  onMemberClick?: (userId: number) => void
 }
 
 async function fetchComments(postId: number): Promise<CommentData[]> {
@@ -32,7 +34,7 @@ async function fetchComments(postId: number): Promise<CommentData[]> {
   return response.json()
 }
 
-export function CommentSection({ postId }: CommentSectionProps) {
+export function CommentSection({ postId, onMemberClick }: CommentSectionProps) {
   const queryClient = useQueryClient()
 
   const { data: comments, isLoading, error } = useQuery({
@@ -85,6 +87,7 @@ export function CommentSection({ postId }: CommentSectionProps) {
               postId={postId}
               onDelete={handleRefresh}
               onReply={handleRefresh}
+              onMemberClick={onMemberClick}
             />
           ))
         )}

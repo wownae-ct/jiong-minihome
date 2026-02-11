@@ -32,7 +32,7 @@ interface GuestbookResponse {
 }
 
 async function fetchGuestbook(page: number): Promise<GuestbookResponse> {
-  const response = await fetch(`/api/guestbook?page=${page}&limit=10`)
+  const response = await fetch(`/api/guestbook?page=${page}&limit=3`)
   if (!response.ok) {
     throw new Error('Failed to fetch guestbook')
   }

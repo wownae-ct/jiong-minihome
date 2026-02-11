@@ -1,26 +1,75 @@
 import { NextRequest, NextResponse } from 'next/server'
+import bcrypt from 'bcryptjs'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
-import { postSchema } from '@/lib/validations/post'
+import { postSchema, guestPostSchema } from '@/lib/validations/post'
+import { parsePagination, formatZodError } from '@/lib/api/helpers'
+
+const VALID_SEARCH_TYPES = ['title', 'content', 'author', 'titleComment'] as const
+
+const POST_INCLUDE = {
+  user: {
+    select: {
+      id: true,
+      nickname: true,
+      profileImage: true,
+    },
+  },
+  category: {
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+    },
+  },
+} as const
 
 // GET: 게시글 목록 조회
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '10')
     const categorySlug = searchParams.get('category')
-    const skip = (page - 1) * limit
+    const search = searchParams.get('search')
+    const searchType = searchParams.get('searchType') || 'title'
+    const { page, limit, skip } = parsePagination(searchParams)
 
-    const where: {
-      isDeleted: boolean
-      category?: { slug: string }
-    } = {
+    if (search && !VALID_SEARCH_TYPES.includes(searchType as typeof VALID_SEARCH_TYPES[number])) {
+      return NextResponse.json(
+        { error: '유효하지 않은 검색 유형입니다' },
+        { status: 400 }
+      )
+    }
+
+    const where: Prisma.PostWhereInput = {
       isDeleted: false,
     }
 
     if (categorySlug) {
       where.category = { slug: categorySlug }
+    }
+
+    if (search) {
+      switch (searchType) {
+        case 'title':
+          where.title = { contains: search }
+          break
+        case 'content':
+          where.content = { contains: search }
+          break
+        case 'author':
+          where.OR = [
+            { user: { nickname: { contains: search } } },
+            { guestName: { contains: search } },
+          ]
+          break
+        case 'titleComment':
+          where.OR = [
+            { title: { contains: search } },
+            { comments: { some: { content: { contains: search }, isDeleted: false } } },
+          ]
+          break
+      }
     }
 
     const [posts, total] = await Promise.all([
@@ -71,25 +120,16 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await auth()
-
-    if (!session) {
-      return NextResponse.json(
-        { error: '로그인이 필요합니다' },
-        { status: 401 }
-      )
-    }
-
     const body = await request.json()
-    const result = postSchema.safeParse(body)
 
+    const schema = session ? postSchema : guestPostSchema
+    const result = schema.safeParse(body)
     if (!result.success) {
-      const firstError = result.error.issues[0]
-      return NextResponse.json({ error: firstError.message }, { status: 400 })
+      return NextResponse.json({ error: formatZodError(result.error) }, { status: 400 })
     }
 
     const { title, content, categoryId, isPrivate } = result.data
 
-    // 카테고리 존재 확인
     const category = await prisma.boardCategory.findUnique({
       where: { id: categoryId },
     })
@@ -101,30 +141,27 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // 비회원인 경우 게스트 필드 처리
+    const data = result.data as Record<string, unknown>
+    const guestData = !session && 'guestName' in data
+      ? {
+          userId: null,
+          guestName: data.guestName as string,
+          guestPassword: await bcrypt.hash(data.guestPassword as string, 10),
+        }
+      : {
+          userId: parseInt(session!.user.id),
+        }
+
     const post = await prisma.post.create({
       data: {
         title,
         content,
         categoryId,
-        userId: parseInt(session.user.id),
         isPrivate: isPrivate || false,
+        ...guestData,
       },
-      include: {
-        user: {
-          select: {
-            id: true,
-            nickname: true,
-            profileImage: true,
-          },
-        },
-        category: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-          },
-        },
-      },
+      include: POST_INCLUDE,
     })
 
     return NextResponse.json(post, { status: 201 })

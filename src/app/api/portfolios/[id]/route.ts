@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
 import prisma from '@/lib/prisma'
 import { portfolioUpdateSchema } from '@/lib/validations/portfolio'
+import { requireAdmin, parseId, upsertPortfolioTags } from '@/lib/api/helpers'
 
 interface Params {
   params: Promise<{ id: string }>
@@ -11,11 +11,8 @@ interface Params {
 export async function GET(request: NextRequest, { params }: Params) {
   try {
     const { id } = await params
-    const portfolioId = parseInt(id, 10)
-
-    if (isNaN(portfolioId)) {
-      return NextResponse.json({ error: '잘못된 ID입니다.' }, { status: 400 })
-    }
+    const { id: portfolioId, error: idError } = parseId(id)
+    if (idError) return idError
 
     const portfolio = await prisma.portfolio.findUnique({
       where: { id: portfolioId, isDeleted: false },
@@ -59,22 +56,12 @@ export async function GET(request: NextRequest, { params }: Params) {
 // PUT: 포트폴리오 수정 (관리자 전용)
 export async function PUT(request: NextRequest, { params }: Params) {
   try {
-    const session = await auth()
-
-    if (!session?.user) {
-      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
-    }
-
-    if (session.user.role !== 'admin') {
-      return NextResponse.json({ error: '권한이 없습니다.' }, { status: 403 })
-    }
+    const { session, error } = await requireAdmin()
+    if (error) return error
 
     const { id } = await params
-    const portfolioId = parseInt(id, 10)
-
-    if (isNaN(portfolioId)) {
-      return NextResponse.json({ error: '잘못된 ID입니다.' }, { status: 400 })
-    }
+    const { id: portfolioId, error: idError } = parseId(id)
+    if (idError) return idError
 
     const body = await request.json()
     const validation = portfolioUpdateSchema.safeParse(body)
@@ -114,26 +101,10 @@ export async function PUT(request: NextRequest, { params }: Params) {
 
       // 태그 업데이트 (기존 태그 삭제 후 재생성)
       if (tags !== undefined) {
-        // 기존 태그 연결 삭제
         await tx.portfolioTag.deleteMany({
           where: { portfolioId },
         })
-
-        // 새 태그 연결
-        for (const tagName of tags) {
-          const tag = await tx.tag.upsert({
-            where: { name: tagName },
-            create: { name: tagName },
-            update: {},
-          })
-
-          await tx.portfolioTag.create({
-            data: {
-              portfolioId,
-              tagId: tag.id,
-            },
-          })
-        }
+        await upsertPortfolioTags(tx, portfolioId, tags)
       }
     })
 
@@ -167,22 +138,12 @@ export async function PUT(request: NextRequest, { params }: Params) {
 // DELETE: 포트폴리오 삭제 (관리자 전용, 소프트 삭제)
 export async function DELETE(request: NextRequest, { params }: Params) {
   try {
-    const session = await auth()
-
-    if (!session?.user) {
-      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
-    }
-
-    if (session.user.role !== 'admin') {
-      return NextResponse.json({ error: '권한이 없습니다.' }, { status: 403 })
-    }
+    const { error } = await requireAdmin()
+    if (error) return error
 
     const { id } = await params
-    const portfolioId = parseInt(id, 10)
-
-    if (isNaN(portfolioId)) {
-      return NextResponse.json({ error: '잘못된 ID입니다.' }, { status: 400 })
-    }
+    const { id: portfolioId, error: idError } = parseId(id)
+    if (idError) return idError
 
     // 기존 포트폴리오 확인
     const existingPortfolio = await prisma.portfolio.findUnique({

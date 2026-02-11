@@ -4,6 +4,7 @@ import { SessionProvider } from "@/components/providers/SessionProvider";
 import { QueryProvider } from "@/components/providers/QueryProvider";
 import { ToastProvider } from "@/components/providers/ToastProvider";
 import { ProfileProvider } from "@/components/providers/ProfileContext";
+import { BgmProvider } from "@/components/providers/BgmContext";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -39,7 +40,9 @@ export default function RootLayout({
                     <QueryProvider>
                         <ThemeProvider>
                             <ToastProvider>
-                                <ProfileProvider>{children}</ProfileProvider>
+                                <ProfileProvider>
+                                    <BgmProvider>{children}</BgmProvider>
+                                </ProfileProvider>
                             </ToastProvider>
                         </ThemeProvider>
                     </QueryProvider>

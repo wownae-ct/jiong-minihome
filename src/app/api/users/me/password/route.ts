@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { requireAuth } from '@/lib/api/helpers'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import bcrypt from 'bcryptjs'
@@ -11,11 +11,8 @@ const changePasswordSchema = z.object({
 
 export async function PATCH(request: NextRequest) {
   try {
-    const session = await auth()
-
-    if (!session?.user) {
-      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
-    }
+    const { session, error } = await requireAuth()
+    if (error) return error
 
     const body = await request.json()
     const result = changePasswordSchema.safeParse(body)

@@ -28,14 +28,23 @@ export function ProfileSettings() {
   } = useForm<ProfileForm>()
 
   useEffect(() => {
-    if (session?.user) {
-      reset({
-        nickname: session.user.name || '',
-        bio: '',
+    // 마운트 시 서버에서 프로필 데이터 로드 (session 변경에 의존하지 않음)
+    fetch('/api/users/me')
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => {
+        if (data) {
+          reset({
+            nickname: data.nickname || '',
+            bio: data.bio || '',
+          })
+          setProfileImage(data.profileImage || null)
+        }
       })
-      setProfileImage(session.user.image || null)
-    }
-  }, [session, reset])
+      .catch(() => {
+        // 폴백: 빈 상태 유지
+      })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const onSubmit = async (data: ProfileForm) => {
     setIsLoading(true)
@@ -46,11 +55,18 @@ export function ProfileSettings() {
         body: JSON.stringify(data),
       })
 
+      const result = await response.json()
+
       if (!response.ok) {
-        const result = await response.json()
         showError(result.error || '프로필 수정에 실패했습니다')
         return
       }
+
+      // 저장된 데이터로 폼 즉시 업데이트
+      reset({
+        nickname: result.nickname || data.nickname,
+        bio: result.bio ?? data.bio,
+      })
 
       success('프로필이 수정되었습니다')
       update()
@@ -113,7 +129,7 @@ export function ProfileSettings() {
               {session?.user?.name?.[0]?.toUpperCase() || 'U'}
             </div>
           )}
-          <label className="absolute bottom-0 right-0 p-2 bg-primary text-white rounded-full cursor-pointer hover:bg-primary/90 transition-colors">
+          <label className="absolute bottom-0 right-0 p-2 flex items-center justify-center bg-primary text-white rounded-full cursor-pointer hover:bg-primary/90 transition-colors">
             <Icon name="photo_camera" size="sm" />
             <input
               type="file"

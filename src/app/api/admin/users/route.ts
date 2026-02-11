@@ -1,25 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin, parsePagination } from '@/lib/api/helpers'
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth()
-
-    if (!session?.user) {
-      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
-    }
-
-    if (session.user.role !== 'admin') {
-      return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 403 })
-    }
+    const { session, error: authError } = await requireAdmin()
+    if (authError) return authError
 
     const { searchParams } = new URL(request.url)
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '10')
+    const { page, limit, skip } = parsePagination(searchParams)
     const search = searchParams.get('search') || ''
-
-    const skip = (page - 1) * limit
 
     const where = search
       ? {

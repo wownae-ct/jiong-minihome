@@ -2,8 +2,7 @@ import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { Sidebar } from '@/components/sidebar/Sidebar'
-import { PostDetail } from '@/components/community/PostDetail'
-import { CommentSection } from '@/components/community/CommentSection'
+import { PostPageClient } from '@/components/community/PostPageClient'
 
 interface PageProps {
   params: Promise<{
@@ -58,7 +57,7 @@ export default async function PostPage({ params }: PageProps) {
 
   return (
     <MainLayout sidebar={<Sidebar />}>
-      <PostDetail
+      <PostPageClient
         post={{
           ...post,
           viewCount: (post.viewCount ?? 0) + 1,
@@ -70,7 +69,6 @@ export default async function PostPage({ params }: PageProps) {
           updatedAt: post.updatedAt?.toISOString() ?? new Date().toISOString(),
         }}
       />
-      <CommentSection postId={post.id} />
     </MainLayout>
   )
 }

@@ -12,6 +12,9 @@ import { usePortfolios, Portfolio } from '@/hooks/usePortfolios'
 import { useTab } from '@/components/providers/TabContext'
 import { AnimatePresence, motion } from 'framer-motion'
 import { SearchFilter } from '@/components/common/SearchFilter'
+import { Pagination } from '@/components/ui/Pagination'
+
+const PORTFOLIO_PAGE_SIZE = 4
 
 export function PortfolioContent() {
   const { data: session } = useSession()
@@ -22,6 +25,7 @@ export function PortfolioContent() {
   const [editingPortfolio, setEditingPortfolio] = useState<Portfolio | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedTags, setSelectedTags] = useState<string[]>([])
+  const [page, setPage] = useState(1)
 
   const isAdmin = session?.user?.role === 'admin'
 
@@ -64,6 +68,13 @@ export function PortfolioContent() {
     })
   }, [projects, searchQuery, selectedTags])
 
+  // 페이징
+  const totalPages = Math.ceil(filteredProjects.length / PORTFOLIO_PAGE_SIZE)
+  const paginatedProjects = useMemo(() => {
+    const start = (page - 1) * PORTFOLIO_PAGE_SIZE
+    return filteredProjects.slice(start, start + PORTFOLIO_PAGE_SIZE)
+  }, [filteredProjects, page])
+
   const handleWriteSuccess = () => {
     refetch()
     setEditingPortfolio(null)
@@ -83,11 +94,18 @@ export function PortfolioContent() {
     setSelectedTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
     )
+    setPage(1)
   }
 
   const handleClearFilters = () => {
     setSearchQuery('')
     setSelectedTags([])
+    setPage(1)
+  }
+
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query)
+    setPage(1)
   }
 
   const handleOpenWriteModal = (portfolio?: Portfolio) => {
@@ -154,7 +172,7 @@ export function PortfolioContent() {
       {!isLoading && projects.length > 0 && (
         <SearchFilter
           searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
+          onSearchChange={handleSearchChange}
           tags={allTags}
           selectedTags={selectedTags}
           onTagToggle={handleTagToggle}
@@ -215,7 +233,7 @@ export function PortfolioContent() {
           className="grid grid-cols-1 md:grid-cols-2 gap-6"
         >
           <AnimatePresence>
-            {filteredProjects.map((project) => (
+            {paginatedProjects.map((project) => (
               <motion.div
                 key={project.id}
                 layout
@@ -296,6 +314,16 @@ export function PortfolioContent() {
             ))}
           </AnimatePresence>
         </motion.div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="pt-4">
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+          />
+        </div>
       )}
 
       {/* 포트폴리오 작성/수정 모달 */}

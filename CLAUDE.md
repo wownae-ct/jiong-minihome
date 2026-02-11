@@ -53,3 +53,7 @@ This is a Korean "미니홈피" (mini-homepage) style portfolio for an IT Infras
 - Community (커뮤니티)
 - Diary (다이어리)
 - Guestbook (방명록)
+
+## Rules
+
+- plan 모드 사용 시 반드시 다음 파일의 지침을 따르세요. docs\claude_code_prompt_for_plan_mode.md

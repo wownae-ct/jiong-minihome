@@ -137,7 +137,7 @@ export function UserManagement() {
         </div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[700px]">
             <thead>
               <tr className="border-b border-slate-200 dark:border-slate-700">
                 <th className="text-left py-3 px-4 text-sm font-medium text-slate-500">회원</th>
@@ -154,7 +154,7 @@ export function UserManagement() {
                   key={user.id}
                   className="border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/30"
                 >
-                  <td className="py-3 px-4">
+                  <td className="py-3 px-4 whitespace-nowrap">
                     <div className="flex items-center gap-3">
                       {user.profileImage ? (
                         <img
@@ -172,10 +172,10 @@ export function UserManagement() {
                       </span>
                     </div>
                   </td>
-                  <td className="py-3 px-4 text-sm text-slate-600 dark:text-slate-400">
+                  <td className="py-3 px-4 text-sm text-slate-600 dark:text-slate-400 whitespace-nowrap">
                     {user.email}
                   </td>
-                  <td className="py-3 px-4">
+                  <td className="py-3 px-4 whitespace-nowrap">
                     <select
                       value={user.role}
                       onChange={(e) => handleRoleChange(user.id, e.target.value as 'admin' | 'user')}
@@ -185,10 +185,10 @@ export function UserManagement() {
                       <option value="admin">관리자</option>
                     </select>
                   </td>
-                  <td className="py-3 px-4 text-sm text-slate-600 dark:text-slate-400">
+                  <td className="py-3 px-4 text-sm text-slate-600 dark:text-slate-400 whitespace-nowrap">
                     {new Date(user.createdAt).toLocaleDateString('ko-KR')}
                   </td>
-                  <td className="py-3 px-4 text-sm text-slate-600 dark:text-slate-400">
+                  <td className="py-3 px-4 text-sm text-slate-600 dark:text-slate-400 whitespace-nowrap">
                     {user.lastLoginAt
                       ? new Date(user.lastLoginAt).toLocaleDateString('ko-KR')
                       : '-'}

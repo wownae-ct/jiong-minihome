@@ -2,14 +2,15 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import Image from 'next/image'
-import { useSession } from 'next-auth/react'
 import { PostList } from '@/components/community/PostList'
 import { PostForm } from '@/components/community/PostForm'
 import { PostDetail } from '@/components/community/PostDetail'
 import { CommentSection } from '@/components/community/CommentSection'
+import { MemberProfileModal } from '@/components/community/MemberProfileModal'
+import { PostSearchBar, SearchType } from '@/components/community/PostSearchBar'
 import { Icon } from '@/components/ui/Icon'
 import { useToast } from '@/components/providers/ToastProvider'
+import { useTab } from '@/components/providers/TabContext'
 
 type Category = 'all' | 'free' | 'qna' | 'info'
 type ViewMode = 'list' | 'write' | 'detail' | 'edit'
@@ -26,6 +27,7 @@ interface PostData {
   createdAt: string
   updatedAt: string
   userId: number | null
+  guestName?: string | null
   user: {
     id: number
     nickname: string
@@ -39,14 +41,18 @@ interface PostData {
 }
 
 export function CommunityContent() {
-  const { data: session } = useSession()
   const { error: showError } = useToast()
   const queryClient = useQueryClient()
+  const { communityPostId, setCommunityPost } = useTab()
   const [activeCategory, setActiveCategory] = useState<Category>('all')
-  const [viewMode, setViewMode] = useState<ViewMode>('list')
-  const [selectedPostId, setSelectedPostId] = useState<number | null>(null)
+  const [viewMode, setViewMode] = useState<ViewMode>(() => communityPostId ? 'detail' : 'list')
+  const [selectedPostId, setSelectedPostId] = useState<number | null>(communityPostId)
   const [selectedPost, setSelectedPost] = useState<PostData | null>(null)
   const [isLoadingPost, setIsLoadingPost] = useState(false)
+  const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchType, setSearchType] = useState<SearchType>('title')
+  const [editGuestPassword, setEditGuestPassword] = useState<string | undefined>()
 
   const categories: { id: Category; label: string }[] = [
     { id: 'all', label: '전체' },
@@ -78,22 +84,33 @@ export function CommunityContent() {
     }
   }, [selectedPostId, viewMode, fetchPost])
 
-  const handlePostClick = (postId: number) => {
+  // 해시 변경(브라우저 뒤로가기/앞으로가기) 시 TabContext와 동기화
+  useEffect(() => {
+    if (communityPostId && communityPostId !== selectedPostId) {
+      setSelectedPostId(communityPostId)
+      setViewMode('detail')
+    } else if (!communityPostId && viewMode === 'detail') {
+      setViewMode('list')
+      setSelectedPostId(null)
+      setSelectedPost(null)
+    }
+  }, [communityPostId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handlePostClick = (postId: number, categorySlug: string) => {
     setSelectedPostId(postId)
     setViewMode('detail')
+    setCommunityPost(postId, categorySlug)
   }
 
   const handleBack = () => {
     setViewMode('list')
     setSelectedPostId(null)
     setSelectedPost(null)
+    setEditGuestPassword(undefined)
+    setCommunityPost(null)
   }
 
   const handleWriteClick = () => {
-    if (!session) {
-      showError('로그인이 필요합니다')
-      return
-    }
     setViewMode('write')
   }
 
@@ -102,7 +119,8 @@ export function CommunityContent() {
     queryClient.invalidateQueries({ queryKey: ['posts'] })
   }
 
-  const handleEditClick = () => {
+  const handleEditClick = (guestPassword?: string) => {
+    setEditGuestPassword(guestPassword)
     setViewMode('edit')
   }
 
@@ -111,13 +129,31 @@ export function CommunityContent() {
       fetchPost(selectedPostId)
     }
     setViewMode('detail')
+    setEditGuestPassword(undefined)
   }
 
   const handleDeleteSuccess = () => {
     setViewMode('list')
     setSelectedPostId(null)
     setSelectedPost(null)
+    setCommunityPost(null)
     queryClient.invalidateQueries({ queryKey: ['posts'] })
+  }
+
+  const handleMemberClick = (userId: number) => {
+    setSelectedMemberId(userId)
+  }
+
+  const handleMemberPostClick = (postId: number) => {
+    setSelectedMemberId(null)
+    setSelectedPostId(postId)
+    setViewMode('detail')
+    setCommunityPost(postId)
+  }
+
+  const handleSearch = (query: string, type: SearchType) => {
+    setSearchQuery(query)
+    setSearchType(type)
   }
 
   return (
@@ -143,44 +179,43 @@ export function CommunityContent() {
             </span>
           </h2>
         </div>
-        {viewMode === 'list' && (
-          <button
-            onClick={handleWriteClick}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-br from-primary to-blue-600 text-white rounded-xl hover:shadow-lg hover:shadow-primary/30 transition-all duration-200 group"
-          >
-            <Image
-              src="/icons/note-icon.png"
-              alt="글쓰기"
-              width={16}
-              height={16}
-              className="invert group-hover:rotate-12 transition-transform duration-200"
-            />
-            글쓰기
-          </button>
-        )}
+        {/* 글쓰기 버튼은 하단 콘텐츠 영역으로 이동 */}
       </div>
 
       {/* 목록 뷰 */}
       {viewMode === 'list' && (
         <>
-          <div className="flex gap-2 mb-6 border-b border-slate-200 dark:border-slate-700 pb-4">
-            {categories.map((category) => (
-              <button
-                key={category.id}
-                onClick={() => setActiveCategory(category.id)}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  activeCategory === category.id
-                    ? 'bg-primary text-white'
-                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
-                }`}
-              >
-                {category.label}
-              </button>
-            ))}
+          <div className="flex items-center justify-between mb-6 border-b border-slate-200 dark:border-slate-700 pb-4">
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+              {categories.map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() => setActiveCategory(category.id)}
+                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap shrink-0 ${
+                    activeCategory === category.id
+                      ? 'bg-primary text-white'
+                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  {category.label}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={handleWriteClick}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-br from-primary to-blue-600 text-white rounded-xl hover:shadow-lg hover:shadow-primary/30 transition-all duration-200 group whitespace-nowrap shrink-0"
+            >
+              <Icon name="edit_note" className="group-hover:rotate-12 transition-transform duration-200" size="sm" />
+              글쓰기
+            </button>
           </div>
+          <PostSearchBar onSearch={handleSearch} className="mb-4" />
           <PostList
             category={activeCategory === 'all' ? undefined : activeCategory}
             onPostClick={handlePostClick}
+            onMemberClick={handleMemberClick}
+            search={searchQuery}
+            searchType={searchType}
           />
         </>
       )}
@@ -199,7 +234,9 @@ export function CommunityContent() {
             content: selectedPost.content,
             categoryId: selectedPost.category.id,
             isPrivate: selectedPost.isPrivate,
+            isGuestPost: !selectedPost.userId && !!selectedPost.guestName,
           }}
+          guestPassword={editGuestPassword}
           onCancel={() => setViewMode('detail')}
           onSuccess={handleEditSuccess}
         />
@@ -215,9 +252,9 @@ export function CommunityContent() {
             </div>
           ) : selectedPost ? (
             <>
-              <PostDetail post={selectedPost} onBack={handleBack} onEdit={handleEditClick} onDelete={handleDeleteSuccess} />
+              <PostDetail post={selectedPost} onBack={handleBack} onEdit={handleEditClick} onDelete={handleDeleteSuccess} onMemberClick={handleMemberClick} />
               <div className="mt-6">
-                <CommentSection postId={selectedPost.id} />
+                <CommentSection postId={selectedPost.id} onMemberClick={handleMemberClick} />
               </div>
             </>
           ) : (
@@ -227,6 +264,12 @@ export function CommunityContent() {
           )}
         </>
       )}
+      <MemberProfileModal
+        isOpen={selectedMemberId !== null}
+        onClose={() => setSelectedMemberId(null)}
+        userId={selectedMemberId}
+        onPostClick={handleMemberPostClick}
+      />
     </div>
   )
 }

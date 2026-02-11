@@ -1,5 +1,5 @@
-import { render, screen, fireEvent } from '@testing-library/react'
-import { describe, it, expect, vi } from 'vitest'
+import { render, screen } from '@/test/test-utils'
+import userEvent from '@testing-library/user-event'
 import { WriteButton } from './WriteButton'
 
 describe('WriteButton', () => {
@@ -15,10 +15,11 @@ describe('WriteButton', () => {
     expect(img).toHaveAttribute('src', expect.stringContaining('note-icon'))
   })
 
-  it('클릭 이벤트가 동작합니다', () => {
+  it('클릭 이벤트가 동작합니다', async () => {
+    const user = userEvent.setup()
     const handleClick = vi.fn()
     render(<WriteButton onClick={handleClick} />)
-    fireEvent.click(screen.getByRole('button'))
+    await user.click(screen.getByRole('button'))
     expect(handleClick).toHaveBeenCalledTimes(1)
   })
 

@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/Badge';
 import { ProjectCard } from './ProjectCard';
 import { DiaryCard } from './DiaryCard';
@@ -8,8 +9,32 @@ import { WelcomeDetail } from './WelcomeDetail';
 import { useTab } from '@/components/providers/TabContext';
 import { AnimatePresence } from 'framer-motion';
 
+function formatUpdateDate(isoString: string): string {
+  const date = new Date(isoString)
+  const yyyy = date.getFullYear()
+  const mm = String(date.getMonth() + 1).padStart(2, '0')
+  const dd = String(date.getDate()).padStart(2, '0')
+  const hours = date.getHours()
+  const period = hours >= 12 ? 'PM' : 'AM'
+  const displayHour = String(hours % 12 || 12).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  return `${yyyy}.${mm}.${dd} ${period} ${displayHour}:${minutes}`
+}
+
 export function WhatsNew() {
   const { welcomeDetailOpen } = useTab()
+  const [updateDate, setUpdateDate] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetch('/api/latest-update')
+      .then(res => res.json())
+      .then(data => {
+        if (data.latestUpdate) {
+          setUpdateDate(formatUpdateDate(data.latestUpdate))
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   // 환영 섹션 상세 보기 모드
   if (welcomeDetailOpen) {
@@ -28,7 +53,7 @@ export function WhatsNew() {
           What&apos;s New
           <Badge variant="orange">Updated</Badge>
         </h3>
-        <span className="text-slate-400 text-sm">2023.11.24 PM 02:30</span>
+        {updateDate && <span className="text-slate-400 text-sm">{updateDate}</span>}
       </div>
 
       {/* 카드 그리드 */}

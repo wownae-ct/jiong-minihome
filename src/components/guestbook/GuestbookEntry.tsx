@@ -60,6 +60,7 @@ export function GuestbookEntry({ entry, onDelete }: GuestbookEntryProps) {
 
       if (!response.ok) {
         showError(result.error || '삭제에 실패했습니다')
+        setShowDeleteModal(false)
         return
       }
 
@@ -118,7 +119,11 @@ export function GuestbookEntry({ entry, onDelete }: GuestbookEntryProps) {
         </div>
 
         {/* 내용 */}
-        <p className="text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
+        <p className={`whitespace-pre-wrap ${
+          entry.isPrivate && !isOwner && !isAdmin
+            ? 'text-slate-400 dark:text-slate-500 italic text-[13px]'
+            : 'text-slate-700 dark:text-slate-300'
+        }`}>
           {entry.content}
         </p>
       </div>

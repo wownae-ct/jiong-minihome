@@ -80,6 +80,81 @@ export function useCreateDiary() {
   })
 }
 
+async function updateDiary({ id, data }: {
+  id: number
+  data: {
+    title?: string
+    content?: string
+    mood?: string
+    weather?: string
+    isPublic?: boolean
+  }
+}): Promise<DiaryEntry> {
+  const response = await fetch(`/api/diary/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  if (!response.ok) {
+    throw new Error('다이어리 수정 실패')
+  }
+  return response.json()
+}
+
+async function toggleDiaryVisibility({ id, currentIsPublic }: {
+  id: number
+  currentIsPublic: boolean
+}): Promise<DiaryEntry> {
+  const response = await fetch(`/api/diary/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ isPublic: !currentIsPublic }),
+  })
+  if (!response.ok) {
+    throw new Error('다이어리 공개 설정 변경 실패')
+  }
+  return response.json()
+}
+
+export function useUpdateDiary() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: updateDiary,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['diaries'] })
+    },
+  })
+}
+
+export function useToggleDiaryVisibility() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: toggleDiaryVisibility,
+    onMutate: async ({ id, currentIsPublic }) => {
+      await queryClient.cancelQueries({ queryKey: ['diaries'] })
+      const previousDiaries = queryClient.getQueryData<DiaryEntry[]>(['diaries'])
+
+      queryClient.setQueryData<DiaryEntry[]>(['diaries'], (old) =>
+        old?.map((diary) =>
+          diary.id === id ? { ...diary, isPublic: !currentIsPublic } : diary
+        )
+      )
+
+      return { previousDiaries }
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previousDiaries) {
+        queryClient.setQueryData(['diaries'], context.previousDiaries)
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['diaries'] })
+    },
+  })
+}
+
 export function useDeleteDiary() {
   const queryClient = useQueryClient()
 

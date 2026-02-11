@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/api/helpers'
 
 export type AdminStatus = 'online' | 'away' | 'offline'
 
@@ -66,15 +66,8 @@ export async function GET(): Promise<NextResponse<AdminStatusResponse>> {
 // 관리자 활동 업데이트 (heartbeat)
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth()
-
-    if (!session?.user) {
-      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
-    }
-
-    if (session.user.role !== 'admin') {
-      return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 403 })
-    }
+    const { session, error: authError } = await requireAdmin()
+    if (authError) return authError
 
     await prisma.user.update({
       where: { id: parseInt(session.user.id) },

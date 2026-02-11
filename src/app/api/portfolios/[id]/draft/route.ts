@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { requireAdmin, parseId } from '@/lib/api/helpers'
 import prisma from '@/lib/prisma'
 
 interface Params {
@@ -9,22 +9,12 @@ interface Params {
 // GET: 특정 포트폴리오의 임시 저장 데이터 조회
 export async function GET(request: NextRequest, { params }: Params) {
   try {
-    const session = await auth()
-
-    if (!session?.user) {
-      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
-    }
-
-    if (session.user.role !== 'admin') {
-      return NextResponse.json({ error: '권한이 없습니다.' }, { status: 403 })
-    }
+    const { session, error: authError } = await requireAdmin()
+    if (authError) return authError
 
     const { id } = await params
-    const portfolioId = parseInt(id, 10)
-
-    if (isNaN(portfolioId)) {
-      return NextResponse.json({ error: '잘못된 ID입니다.' }, { status: 400 })
-    }
+    const { id: portfolioId, error: idError } = parseId(id)
+    if (idError) return idError
 
     const portfolio = await prisma.portfolio.findUnique({
       where: { id: portfolioId },
@@ -61,22 +51,12 @@ export async function GET(request: NextRequest, { params }: Params) {
 // PUT: 특정 포트폴리오에 임시 저장
 export async function PUT(request: NextRequest, { params }: Params) {
   try {
-    const session = await auth()
-
-    if (!session?.user) {
-      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
-    }
-
-    if (session.user.role !== 'admin') {
-      return NextResponse.json({ error: '권한이 없습니다.' }, { status: 403 })
-    }
+    const { session, error: authError } = await requireAdmin()
+    if (authError) return authError
 
     const { id } = await params
-    const portfolioId = parseInt(id, 10)
-
-    if (isNaN(portfolioId)) {
-      return NextResponse.json({ error: '잘못된 ID입니다.' }, { status: 400 })
-    }
+    const { id: portfolioId, error: idError } = parseId(id)
+    if (idError) return idError
 
     const body = await request.json()
 
@@ -125,22 +105,12 @@ export async function PUT(request: NextRequest, { params }: Params) {
 // DELETE: 임시 저장 데이터 삭제
 export async function DELETE(request: NextRequest, { params }: Params) {
   try {
-    const session = await auth()
-
-    if (!session?.user) {
-      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
-    }
-
-    if (session.user.role !== 'admin') {
-      return NextResponse.json({ error: '권한이 없습니다.' }, { status: 403 })
-    }
+    const { session, error: authError } = await requireAdmin()
+    if (authError) return authError
 
     const { id } = await params
-    const portfolioId = parseInt(id, 10)
-
-    if (isNaN(portfolioId)) {
-      return NextResponse.json({ error: '잘못된 ID입니다.' }, { status: 400 })
-    }
+    const { id: portfolioId, error: idError } = parseId(id)
+    if (idError) return idError
 
     // 임시 저장 데이터 삭제 (포트폴리오 자체는 유지)
     await prisma.portfolio.update({

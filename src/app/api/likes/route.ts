@@ -1,66 +1,116 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
+import { createNotification } from '@/lib/notifications'
+
+const VALID_TARGET_TYPES = ['post', 'comment', 'guestbook', 'diary'] as const
+type TargetType = typeof VALID_TARGET_TYPES[number]
+
+function isValidTargetType(value: string): value is TargetType {
+  return VALID_TARGET_TYPES.includes(value as TargetType)
+}
 
 // POST: 좋아요 토글
 export async function POST(request: NextRequest) {
   try {
     const session = await auth()
-
-    if (!session) {
-      return NextResponse.json(
-        { error: '로그인이 필요합니다' },
-        { status: 401 }
-      )
-    }
-
     const body = await request.json()
-    const { targetType, targetId } = body
+    const { targetType, targetId, anonymousId } = body
 
-    if (!targetType || !targetId) {
+    if (!targetType || !targetId || !isValidTargetType(targetType)) {
       return NextResponse.json(
         { error: '잘못된 요청입니다' },
         { status: 400 }
       )
     }
 
-    const userId = parseInt(session.user.id)
+    if (session) {
+      // 로그인 사용자
+      const userId = parseInt(session.user.id)
 
-    // 기존 좋아요 확인
-    const existingLike = await prisma.like.findUnique({
-      where: {
-        uk_likes_user_target: {
-          userId,
-          targetType,
-          targetId,
+      const existingLike = await prisma.like.findUnique({
+        where: {
+          uk_likes_user_target: {
+            userId,
+            targetType,
+            targetId,
+          },
         },
-      },
-    })
-
-    if (existingLike) {
-      // 좋아요 취소
-      await prisma.like.delete({
-        where: { id: existingLike.id },
       })
 
-      // 대상의 좋아요 수 감소
-      await updateLikeCount(targetType, targetId, -1)
+      if (existingLike) {
+        await prisma.like.delete({
+          where: { id: existingLike.id },
+        })
+        await updateLikeCount(targetType, targetId, -1)
+        return NextResponse.json({ liked: false })
+      } else {
+        await prisma.like.create({
+          data: {
+            userId,
+            targetType,
+            targetId,
+          },
+        })
+        await updateLikeCount(targetType, targetId, 1)
 
-      return NextResponse.json({ liked: false })
+        // 게시글 좋아요인 경우 작성자에게 알림
+        if (targetType === 'post') {
+          const post = await prisma.post.findUnique({
+            where: { id: targetId },
+            include: { category: { select: { slug: true } } },
+          })
+
+          if (post?.userId) {
+            const actorName = session.user.name || '사용자'
+            createNotification({
+              userId: post.userId,
+              type: 'like',
+              actorId: userId,
+              targetType: 'post',
+              targetId,
+              message: `${actorName}님이 회원님의 게시글을 좋아합니다.`,
+              link: `/community/${post.category.slug}/${targetId}`,
+            }).catch(console.error)
+          }
+        }
+
+        return NextResponse.json({ liked: true })
+      }
     } else {
-      // 좋아요 추가
-      await prisma.like.create({
-        data: {
-          userId,
+      // 비로그인 사용자 (익명)
+      if (!anonymousId) {
+        return NextResponse.json(
+          { error: '익명 식별자가 필요합니다' },
+          { status: 400 }
+        )
+      }
+
+      const existingLike = await prisma.like.findFirst({
+        where: {
+          anonymousId,
           targetType,
           targetId,
         },
       })
 
-      // 대상의 좋아요 수 증가
-      await updateLikeCount(targetType, targetId, 1)
-
-      return NextResponse.json({ liked: true })
+      if (existingLike) {
+        await prisma.like.delete({
+          where: { id: existingLike.id },
+        })
+        await updateLikeCount(targetType, targetId, -1)
+        return NextResponse.json({ liked: false })
+      } else {
+        await prisma.like.create({
+          data: {
+            anonymousId,
+            targetType,
+            targetId,
+          },
+        })
+        await updateLikeCount(targetType, targetId, 1)
+        return NextResponse.json({ liked: true })
+      }
     }
   } catch (error) {
     console.error('Like POST error:', error)
@@ -78,29 +128,48 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const targetType = searchParams.get('targetType')
     const targetId = searchParams.get('targetId')
+    const anonymousId = searchParams.get('anonymousId')
 
-    if (!targetType || !targetId) {
+    if (!targetType || !targetId || !isValidTargetType(targetType)) {
       return NextResponse.json(
         { error: '잘못된 요청입니다' },
         { status: 400 }
       )
     }
 
-    if (!session) {
-      return NextResponse.json({ liked: false })
+    const parsedTargetId = parseInt(targetId)
+    if (isNaN(parsedTargetId)) {
+      return NextResponse.json(
+        { error: '잘못된 요청입니다' },
+        { status: 400 }
+      )
     }
 
-    const like = await prisma.like.findUnique({
-      where: {
-        uk_likes_user_target: {
-          userId: parseInt(session.user.id),
-          targetType: targetType as 'post' | 'comment' | 'guestbook' | 'diary',
-          targetId: parseInt(targetId),
+    if (session) {
+      const like = await prisma.like.findUnique({
+        where: {
+          uk_likes_user_target: {
+            userId: parseInt(session.user.id),
+            targetType,
+            targetId: parsedTargetId,
+          },
         },
-      },
-    })
+      })
 
-    return NextResponse.json({ liked: !!like })
+      return NextResponse.json({ liked: !!like })
+    } else if (anonymousId) {
+      const like = await prisma.like.findFirst({
+        where: {
+          anonymousId,
+          targetType,
+          targetId: parsedTargetId,
+        },
+      })
+
+      return NextResponse.json({ liked: !!like })
+    }
+
+    return NextResponse.json({ liked: false })
   } catch (error) {
     console.error('Like GET error:', error)
     return NextResponse.json(
@@ -111,7 +180,7 @@ export async function GET(request: NextRequest) {
 }
 
 async function updateLikeCount(
-  targetType: string,
+  targetType: TargetType,
   targetId: number,
   increment: number
 ) {

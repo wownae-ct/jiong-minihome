@@ -91,7 +91,7 @@ export function WelcomeDetail() {
                                     title
                                 )}
                             </h1>
-                            <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                            <p className="text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line">
                                 {description}
                             </p>
                         </section>

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
+import { requireAuth, formatZodError } from '@/lib/api/helpers'
 
 const updateProfileSchema = z.object({
   nickname: z.string().min(1).max(50).optional(),
@@ -11,11 +11,8 @@ const updateProfileSchema = z.object({
 
 export async function GET() {
   try {
-    const session = await auth()
-
-    if (!session?.user) {
-      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
-    }
+    const { session, error } = await requireAuth()
+    if (error) return error
 
     const user = await prisma.user.findUnique({
       where: { id: parseInt(session.user.id) },
@@ -27,6 +24,7 @@ export async function GET() {
         bio: true,
         role: true,
         createdAt: true,
+        passwordHash: true,
       },
     })
 
@@ -34,7 +32,11 @@ export async function GET() {
       return NextResponse.json({ error: '사용자를 찾을 수 없습니다.' }, { status: 404 })
     }
 
-    return NextResponse.json(user)
+    const { passwordHash, ...userData } = user
+    return NextResponse.json({
+      ...userData,
+      hasPassword: !!passwordHash,
+    })
   } catch (error) {
     console.error('사용자 정보 조회 오류:', error)
     return NextResponse.json({ error: '사용자 정보 조회에 실패했습니다.' }, { status: 500 })
@@ -43,18 +45,15 @@ export async function GET() {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const session = await auth()
-
-    if (!session?.user) {
-      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
-    }
+    const { session, error } = await requireAuth()
+    if (error) return error
 
     const body = await request.json()
     const result = updateProfileSchema.safeParse(body)
 
     if (!result.success) {
       return NextResponse.json(
-        { error: '유효하지 않은 데이터입니다.', details: result.error.flatten() },
+        { error: formatZodError(result.error) },
         { status: 400 }
       )
     }

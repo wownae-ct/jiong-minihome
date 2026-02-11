@@ -1,5 +1,6 @@
 import { ProfileCard } from './ProfileCard';
 import { ContactInfo } from './ContactInfo';
+import { AnnouncementBanner } from './AnnouncementBanner';
 import { VisitorCounter } from './VisitorCounter';
 
 export function Sidebar() {
@@ -7,7 +8,10 @@ export function Sidebar() {
     <>
       <ProfileCard />
       <ContactInfo />
-      <VisitorCounter />
+      <AnnouncementBanner />
+      <div className="mt-auto">
+        <VisitorCounter />
+      </div>
     </>
   );
 }

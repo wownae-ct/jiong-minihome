@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
+import { parseId, verifyGuestPassword } from '@/lib/api/helpers'
 
 // DELETE: 댓글 삭제
 export async function DELETE(
@@ -9,15 +10,9 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
-    const commentId = parseInt(id)
+    const { id: commentId, error: idError } = parseId(id)
+    if (idError) return idError
     const session = await auth()
-
-    if (!session) {
-      return NextResponse.json(
-        { error: '로그인이 필요합니다' },
-        { status: 401 }
-      )
-    }
 
     const comment = await prisma.comment.findUnique({
       where: { id: commentId },
@@ -30,14 +25,29 @@ export async function DELETE(
       )
     }
 
-    const isOwner = session.user.id === String(comment.userId)
-    const isAdmin = session.user.role === 'admin'
+    // 회원 댓글인 경우
+    if (comment.userId) {
+      if (!session) {
+        return NextResponse.json(
+          { error: '로그인이 필요합니다' },
+          { status: 401 }
+        )
+      }
 
-    if (!isOwner && !isAdmin) {
-      return NextResponse.json(
-        { error: '삭제 권한이 없습니다' },
-        { status: 403 }
-      )
+      const isOwner = session.user.id === String(comment.userId)
+      const isAdmin = session.user.role === 'admin'
+
+      if (!isOwner && !isAdmin) {
+        return NextResponse.json(
+          { error: '삭제 권한이 없습니다' },
+          { status: 403 }
+        )
+      }
+    } else {
+      // 비회원 댓글인 경우 - 비밀번호 확인 (admin은 비밀번호 없이 가능)
+      const body = await request.json().catch(() => ({}))
+      const passwordError = await verifyGuestPassword(comment.guestPassword, body.password, session)
+      if (passwordError) return passwordError
     }
 
     // Soft delete

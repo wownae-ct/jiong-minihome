@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { requireAdmin, parseId, formatZodError } from '@/lib/api/helpers'
 import prisma from '@/lib/prisma'
 import { tagSchema } from '@/lib/validations/portfolio'
 
@@ -11,11 +11,8 @@ interface Params {
 export async function GET(request: NextRequest, { params }: Params) {
   try {
     const { id } = await params
-    const tagId = parseInt(id, 10)
-
-    if (isNaN(tagId)) {
-      return NextResponse.json({ error: '잘못된 ID입니다.' }, { status: 400 })
-    }
+    const { id: tagId, error } = parseId(id)
+    if (error) return error
 
     const tag = await prisma.tag.findUnique({
       where: { id: tagId },
@@ -51,29 +48,19 @@ export async function GET(request: NextRequest, { params }: Params) {
 // PUT: 태그 수정 (관리자 전용)
 export async function PUT(request: NextRequest, { params }: Params) {
   try {
-    const session = await auth()
-
-    if (!session?.user) {
-      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
-    }
-
-    if (session.user.role !== 'admin') {
-      return NextResponse.json({ error: '권한이 없습니다.' }, { status: 403 })
-    }
+    const { session, error: authError } = await requireAdmin()
+    if (authError) return authError
 
     const { id } = await params
-    const tagId = parseInt(id, 10)
-
-    if (isNaN(tagId)) {
-      return NextResponse.json({ error: '잘못된 ID입니다.' }, { status: 400 })
-    }
+    const { id: tagId, error: idError } = parseId(id)
+    if (idError) return idError
 
     const body = await request.json()
     const validation = tagSchema.safeParse(body)
 
     if (!validation.success) {
       return NextResponse.json(
-        { error: validation.error.issues[0].message },
+        { error: formatZodError(validation.error) },
         { status: 400 }
       )
     }
@@ -121,22 +108,12 @@ export async function PUT(request: NextRequest, { params }: Params) {
 // DELETE: 태그 삭제 (관리자 전용)
 export async function DELETE(request: NextRequest, { params }: Params) {
   try {
-    const session = await auth()
-
-    if (!session?.user) {
-      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
-    }
-
-    if (session.user.role !== 'admin') {
-      return NextResponse.json({ error: '권한이 없습니다.' }, { status: 403 })
-    }
+    const { session, error: authError } = await requireAdmin()
+    if (authError) return authError
 
     const { id } = await params
-    const tagId = parseInt(id, 10)
-
-    if (isNaN(tagId)) {
-      return NextResponse.json({ error: '잘못된 ID입니다.' }, { status: 400 })
-    }
+    const { id: tagId, error: idError } = parseId(id)
+    if (idError) return idError
 
     // 기존 태그 확인
     const existingTag = await prisma.tag.findUnique({

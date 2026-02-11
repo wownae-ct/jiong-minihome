@@ -1,19 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { requireAdmin } from '@/lib/api/helpers'
 import prisma from '@/lib/prisma'
 
 // POST: 새 포트폴리오 임시 저장 (아직 생성되지 않은 경우)
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth()
-
-    if (!session?.user) {
-      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
-    }
-
-    if (session.user.role !== 'admin') {
-      return NextResponse.json({ error: '권한이 없습니다.' }, { status: 403 })
-    }
+    const { session, error } = await requireAdmin()
+    if (error) return error
 
     const body = await request.json()
 
@@ -53,15 +46,8 @@ export async function POST(request: NextRequest) {
 // GET: 임시 저장된 포트폴리오 목록 조회
 export async function GET() {
   try {
-    const session = await auth()
-
-    if (!session?.user) {
-      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
-    }
-
-    if (session.user.role !== 'admin') {
-      return NextResponse.json({ error: '권한이 없습니다.' }, { status: 403 })
-    }
+    const { session, error } = await requireAdmin()
+    if (error) return error
 
     const drafts = await prisma.portfolio.findMany({
       where: {

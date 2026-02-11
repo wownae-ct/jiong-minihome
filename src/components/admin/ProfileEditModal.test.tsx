@@ -1,5 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@/test/test-utils'
 import userEvent from '@testing-library/user-event'
 import { ProfileEditModal } from './ProfileEditModal'
 
@@ -56,15 +55,17 @@ describe('ProfileEditModal', () => {
   })
 
   it('닫기 버튼 클릭 시 onClose가 호출되어야 함', async () => {
+    const user = userEvent.setup()
     render(<ProfileEditModal {...defaultProps} />)
 
     const cancelButton = screen.getByText('취소')
-    await userEvent.click(cancelButton)
+    await user.click(cancelButton)
 
     expect(mockOnClose).toHaveBeenCalled()
   })
 
   it('저장 버튼 클릭 시 API가 호출되어야 함', async () => {
+    const user = userEvent.setup()
     vi.mocked(global.fetch).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ success: true }),
@@ -73,7 +74,7 @@ describe('ProfileEditModal', () => {
     render(<ProfileEditModal {...defaultProps} />)
 
     const saveButton = screen.getByText('저장')
-    await userEvent.click(saveButton)
+    await user.click(saveButton)
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith('/api/profile', {
@@ -85,6 +86,7 @@ describe('ProfileEditModal', () => {
   })
 
   it('API 성공 시 onSuccess가 호출되어야 함', async () => {
+    const user = userEvent.setup()
     vi.mocked(global.fetch).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ success: true }),
@@ -93,7 +95,7 @@ describe('ProfileEditModal', () => {
     render(<ProfileEditModal {...defaultProps} />)
 
     const saveButton = screen.getByText('저장')
-    await userEvent.click(saveButton)
+    await user.click(saveButton)
 
     await waitFor(() => {
       expect(mockOnSuccess).toHaveBeenCalled()
@@ -101,6 +103,7 @@ describe('ProfileEditModal', () => {
   })
 
   it('API 실패 시 에러 메시지가 표시되어야 함', async () => {
+    const user = userEvent.setup()
     vi.mocked(global.fetch).mockResolvedValueOnce({
       ok: false,
       json: async () => ({ error: '업데이트 실패' }),
@@ -109,7 +112,7 @@ describe('ProfileEditModal', () => {
     render(<ProfileEditModal {...defaultProps} />)
 
     const saveButton = screen.getByText('저장')
-    await userEvent.click(saveButton)
+    await user.click(saveButton)
 
     await waitFor(() => {
       expect(screen.getByText('업데이트 실패')).toBeInTheDocument()

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { postSchema } from '@/lib/validations/post'
+import { parseId, verifyGuestPassword } from '@/lib/api/helpers'
 
 // GET: 게시글 상세 조회
 export async function GET(
@@ -10,7 +11,8 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const postId = parseInt(id)
+    const { id: postId, error: idError } = parseId(id)
+    if (idError) return idError
 
     const post = await prisma.post.findUnique({
       where: { id: postId, isDeleted: false },
@@ -62,15 +64,9 @@ export async function PUT(
 ) {
   try {
     const { id } = await params
-    const postId = parseInt(id)
+    const { id: postId, error: idError } = parseId(id)
+    if (idError) return idError
     const session = await auth()
-
-    if (!session) {
-      return NextResponse.json(
-        { error: '로그인이 필요합니다' },
-        { status: 401 }
-      )
-    }
 
     const post = await prisma.post.findUnique({
       where: { id: postId },
@@ -83,17 +79,32 @@ export async function PUT(
       )
     }
 
-    const isOwner = session.user.id === String(post.userId)
-    const isAdmin = session.user.role === 'admin'
+    const body = await request.json()
 
-    if (!isOwner && !isAdmin) {
-      return NextResponse.json(
-        { error: '수정 권한이 없습니다' },
-        { status: 403 }
-      )
+    // 회원 글인 경우
+    if (post.userId) {
+      if (!session) {
+        return NextResponse.json(
+          { error: '로그인이 필요합니다' },
+          { status: 401 }
+        )
+      }
+
+      const isOwner = session.user.id === String(post.userId)
+      const isAdmin = session.user.role === 'admin'
+
+      if (!isOwner && !isAdmin) {
+        return NextResponse.json(
+          { error: '수정 권한이 없습니다' },
+          { status: 403 }
+        )
+      }
+    } else {
+      // 비회원 글인 경우 - 비밀번호 확인 (admin은 비밀번호 없이 가능)
+      const passwordError = await verifyGuestPassword(post.guestPassword, body.password, session)
+      if (passwordError) return passwordError
     }
 
-    const body = await request.json()
     const result = postSchema.safeParse(body)
 
     if (!result.success) {
@@ -140,15 +151,9 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
-    const postId = parseInt(id)
+    const { id: postId, error: idError } = parseId(id)
+    if (idError) return idError
     const session = await auth()
-
-    if (!session) {
-      return NextResponse.json(
-        { error: '로그인이 필요합니다' },
-        { status: 401 }
-      )
-    }
 
     const post = await prisma.post.findUnique({
       where: { id: postId },
@@ -161,14 +166,29 @@ export async function DELETE(
       )
     }
 
-    const isOwner = session.user.id === String(post.userId)
-    const isAdmin = session.user.role === 'admin'
+    // 회원 글인 경우
+    if (post.userId) {
+      if (!session) {
+        return NextResponse.json(
+          { error: '로그인이 필요합니다' },
+          { status: 401 }
+        )
+      }
 
-    if (!isOwner && !isAdmin) {
-      return NextResponse.json(
-        { error: '삭제 권한이 없습니다' },
-        { status: 403 }
-      )
+      const isOwner = session.user.id === String(post.userId)
+      const isAdmin = session.user.role === 'admin'
+
+      if (!isOwner && !isAdmin) {
+        return NextResponse.json(
+          { error: '삭제 권한이 없습니다' },
+          { status: 403 }
+        )
+      }
+    } else {
+      // 비회원 글인 경우 - 비밀번호 확인 (admin은 비밀번호 없이 가능)
+      const body = await request.json().catch(() => ({}))
+      const passwordError = await verifyGuestPassword(post.guestPassword, body.password, session)
+      if (passwordError) return passwordError
     }
 
     // Soft delete

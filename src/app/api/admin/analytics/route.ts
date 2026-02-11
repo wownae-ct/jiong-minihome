@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { requireAdmin } from '@/lib/api/helpers'
 // import { prisma } from '@/lib/prisma'
 
 // 방문자 통계 API - 임시 비활성화
@@ -7,15 +7,8 @@ import { auth } from '@/lib/auth'
 
 export async function GET() {
   try {
-    const session = await auth()
-
-    if (!session?.user) {
-      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
-    }
-
-    if (session.user.role !== 'admin') {
-      return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 403 })
-    }
+    const { session, error: authError } = await requireAdmin()
+    if (authError) return authError
 
     // 방문자 통계 기능 임시 비활성화
     // const now = new Date()

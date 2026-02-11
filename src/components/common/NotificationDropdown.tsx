@@ -3,8 +3,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import Link from 'next/link'
 import { Icon } from '@/components/ui/Icon'
+import { useTab, TabId } from '@/components/providers/TabContext'
 
 interface NotificationData {
   id: number
@@ -25,6 +25,26 @@ interface NotificationsResponse {
   unreadCount: number
 }
 
+function parseCommunityLink(link: string): { postId: number; categorySlug: string } | null {
+  const match = link.match(/^\/community\/([a-z]+)\/(\d+)$/)
+  if (match) {
+    return { categorySlug: match[1], postId: parseInt(match[2], 10) }
+  }
+  return null
+}
+
+function parseHashTabLink(link: string): TabId | null {
+  const match = link.match(/^\/?#([a-z]+)/)
+  if (match) {
+    const tab = match[1]
+    const validTabs: TabId[] = ['intro', 'career', 'portfolio', 'community', 'diary', 'guestbook', 'admin', 'settings']
+    if (validTabs.includes(tab as TabId)) {
+      return tab as TabId
+    }
+  }
+  return null
+}
+
 async function fetchNotifications(): Promise<NotificationsResponse> {
   const response = await fetch('/api/notifications?limit=10')
   if (!response.ok) throw new Error('Failed to fetch notifications')
@@ -34,6 +54,7 @@ async function fetchNotifications(): Promise<NotificationsResponse> {
 export function NotificationDropdown() {
   const { data: session } = useSession()
   const queryClient = useQueryClient()
+  const { setCommunityPost, setActiveTab } = useTab()
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -70,7 +91,7 @@ export function NotificationDropdown() {
     }
   }
 
-  const handleNotificationClick = async (notification: NotificationData) => {
+  const handleNotificationClick = async (notification: NotificationData, e: React.MouseEvent) => {
     if (!notification.isRead) {
       try {
         await fetch('/api/notifications', {
@@ -84,6 +105,22 @@ export function NotificationDropdown() {
       }
     }
     setIsOpen(false)
+
+    if (notification.link) {
+      const communityLink = parseCommunityLink(notification.link)
+      if (communityLink) {
+        e.preventDefault()
+        setCommunityPost(communityLink.postId, communityLink.categorySlug)
+        return
+      }
+
+      const hashTab = parseHashTabLink(notification.link)
+      if (hashTab) {
+        e.preventDefault()
+        setActiveTab(hashTab)
+        return
+      }
+    }
   }
 
   const formatTime = (dateString: string) => {
@@ -140,10 +177,10 @@ export function NotificationDropdown() {
               </div>
             ) : (
               data.notifications.map((notification) => (
-                <Link
+                <a
                   key={notification.id}
                   href={notification.link || '#'}
-                  onClick={() => handleNotificationClick(notification)}
+                  onClick={(e) => handleNotificationClick(notification, e)}
                   className={`block px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${
                     !notification.isRead ? 'bg-blue-50/50 dark:bg-blue-900/20' : ''
                   }`}
@@ -172,7 +209,7 @@ export function NotificationDropdown() {
                       <div className="w-2 h-2 bg-primary rounded-full mt-2" />
                     )}
                   </div>
-                </Link>
+                </a>
               ))
             )}
           </div>
