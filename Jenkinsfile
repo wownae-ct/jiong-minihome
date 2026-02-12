@@ -21,12 +21,14 @@ pipeline {
         stage('Prepare') {
             steps {
                 sh 'cp /opt/env/.env.production .env.production'
+                sh "sed -i '/^#/d; /^[[:space:]]*$/d' .env.production"
             }
         }
 
         stage('Build Image') {
             steps {
-                sh "docker build -t ${APP_NAME}:${BUILD_NUMBER} -t ${APP_NAME}:latest ."
+                sh 'docker compose build'
+                sh "docker tag ${APP_NAME}:latest ${APP_NAME}:${BUILD_NUMBER}"
             }
         }
 
@@ -35,13 +37,7 @@ pipeline {
                 sh """
                     docker stop ${CONTAINER_NAME} 2>/dev/null || true
                     docker rm ${CONTAINER_NAME} 2>/dev/null || true
-                    docker run -d \
-                        --name ${CONTAINER_NAME} \
-                        --restart unless-stopped \
-                        -p 3000:3000 \
-                        --env-file .env.production \
-                        -v uploads_data:/app/public/uploads \
-                        ${APP_NAME}:latest
+                    docker compose up -d
                 """
             }
         }

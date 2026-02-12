@@ -2,6 +2,7 @@ services:
   app:
     build: .
     image: portfolio-web:latest
+    container_name: portfolio-web-app
     restart: unless-stopped
     ports:
       - "3000:3000"
