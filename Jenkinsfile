@@ -21,7 +21,7 @@ pipeline {
         stage('Prepare') {
             steps {
                 sh 'cp /opt/env/.env.production .env.production'
-                sh "sed -i '/^#/d; /^[[:space:]]*$/d' .env.production"
+                sh '''sed -i '/^#/d; /^[[:space:]]*$/d' .env.production'''
             }
         }
 
