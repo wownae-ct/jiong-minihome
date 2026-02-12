@@ -44,9 +44,9 @@ pipeline {
 
         stage('Health Check') {
             steps {
-                retry(3) {
+                retry(5) {
                     sleep(time: 5, unit: 'SECONDS')
-                    sh 'curl -sf http://localhost:3000 > /dev/null'
+                    sh 'docker exec portfolio-web-app wget -qO /dev/null http://localhost:3000'
                 }
             }
         }
