@@ -44,17 +44,10 @@ pipeline {
 
         stage('Health Check') {
             steps {
-                sleep(time: 10, unit: 'SECONDS')
-                sh '''
-                    echo "=== Container Status ==="
-                    docker inspect portfolio-web-app --format="Status={{.State.Status}} Running={{.State.Running}} Pid={{.State.Pid}} RestartCount={{.RestartCount}}" || true
-                    echo "=== Port Listening ==="
-                    docker exec portfolio-web-app sh -c "netstat -tlnp 2>/dev/null || ss -tlnp 2>/dev/null || cat /proc/net/tcp 2>/dev/null" || true
-                    echo "=== Container Logs ==="
-                    docker logs portfolio-web-app 2>&1 || true
-                    echo "=== Connectivity Test ==="
-                    docker exec portfolio-web-app wget -qO /dev/null http://127.0.0.1:3000
-                '''
+                retry(5) {
+                    sleep(time: 5, unit: 'SECONDS')
+                    sh 'docker exec portfolio-web-app wget -qO /dev/null http://127.0.0.1:3000'
+                }
             }
         }
     }
