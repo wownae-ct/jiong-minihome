@@ -62,7 +62,8 @@ pipeline {
             sh "docker logs ${CONTAINER_NAME} --tail 50 || true"
         }
         always {
-            sh 'docker image prune -f'
+            sh 'docker image prune -af --filter "until=24h"'
+            sh 'docker builder prune -af --filter "until=24h"'
         }
     }
 }
