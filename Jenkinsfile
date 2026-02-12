@@ -7,13 +7,18 @@ pipeline {
 
     environment {
         APP_NAME = 'portfolio-web'
-        DEPLOY_DIR = '/home/deploy/portfolio-web'
     }
 
     stages {
         stage('Checkout') {
             steps {
                 checkout scm
+            }
+        }
+
+        stage('Prepare') {
+            steps {
+                sh 'cp /opt/env/.env.production .env.production'
             }
         }
 
@@ -25,11 +30,7 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                sh """
-                    cp docker-compose.yml ${DEPLOY_DIR}/docker-compose.yml
-                    cd ${DEPLOY_DIR}
-                    docker compose up -d --no-build
-                """
+                sh 'docker compose up -d --no-build'
             }
         }
 
@@ -41,17 +42,15 @@ pipeline {
                 }
             }
         }
-
-        stage('Cleanup') {
-            steps {
-                sh 'docker image prune -f'
-            }
-        }
     }
 
     post {
         failure {
-            sh "cd ${DEPLOY_DIR} && docker compose logs --tail=50 app"
+            echo 'Build failed. Checking docker logs...'
+            sh 'docker compose logs --tail=50 || true'
+        }
+        always {
+            sh 'docker image prune -f'
         }
     }
 }

@@ -9,5 +9,6 @@ services:
       - /mnt/jenkins_data:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
       - /usr/bin/docker:/usr/bin/docker
+      - /home/deploy/portfolio-web/.env.production:/opt/env/.env.production:ro
     environment:
-      - JAVA_OPTS=-Djava.awt.headless=true
+      - JAVA_OPTS=-Dorg.jenkinsci.plugins.durabletask.BourneShellScript.HEARTBEAT_CHECK_INTERVAL=86400
