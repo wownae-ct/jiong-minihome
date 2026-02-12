@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    options {
+        disableConcurrentBuilds(abortPrevious: true)
+    }
+
     environment {
         APP_NAME = 'portfolio-web'
         DEPLOY_DIR = '/home/deploy/portfolio-web'
