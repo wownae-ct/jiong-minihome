@@ -8,6 +8,7 @@ pipeline {
 
     environment {
         APP_NAME = 'portfolio-web'
+        CONTAINER_NAME = 'portfolio-web-app'
     }
 
     stages {
@@ -31,7 +32,17 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                sh 'docker compose up -d --no-build'
+                sh """
+                    docker stop ${CONTAINER_NAME} 2>/dev/null || true
+                    docker rm ${CONTAINER_NAME} 2>/dev/null || true
+                    docker run -d \
+                        --name ${CONTAINER_NAME} \
+                        --restart unless-stopped \
+                        -p 3000:3000 \
+                        --env-file .env.production \
+                        -v uploads_data:/app/public/uploads \
+                        ${APP_NAME}:latest
+                """
             }
         }
 
@@ -48,7 +59,7 @@ pipeline {
     post {
         failure {
             echo 'Build failed. Checking docker logs...'
-            sh 'docker compose logs -n 50 || true'
+            sh "docker logs ${CONTAINER_NAME} --tail 50 || true"
         }
         always {
             sh 'docker image prune -f'
