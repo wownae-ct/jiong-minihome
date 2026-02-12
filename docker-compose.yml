@@ -4,7 +4,7 @@ services:
     image: portfolio-web:latest
     restart: unless-stopped
     ports:
-      - "127.0.0.1:3000:3000"
+      - "3000:3000"
     env_file:
       - .env.production
     volumes:
