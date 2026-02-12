@@ -8,7 +8,6 @@ pipeline {
 
     environment {
         APP_NAME = 'portfolio-web'
-        CONTAINER_NAME = 'portfolio-web-app'
     }
 
     stages {
@@ -34,11 +33,12 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                sh """
-                    docker stop ${CONTAINER_NAME} 2>/dev/null || true
-                    docker rm ${CONTAINER_NAME} 2>/dev/null || true
+                sh '''
+                    docker compose down --remove-orphans 2>/dev/null || true
+                    docker ps -q --filter "publish=3000" | xargs -r docker stop
+                    docker ps -aq --filter "publish=3000" | xargs -r docker rm
                     docker compose up -d
-                """
+                '''
             }
         }
 
@@ -55,7 +55,7 @@ pipeline {
     post {
         failure {
             echo 'Build failed. Checking docker logs...'
-            sh "docker logs ${CONTAINER_NAME} --tail 50 || true"
+            sh 'docker compose logs --tail 50 || true'
         }
         always {
             sh 'docker image prune -af --filter "until=24h"'
