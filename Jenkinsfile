@@ -48,7 +48,7 @@ pipeline {
     post {
         failure {
             echo 'Build failed. Checking docker logs...'
-            sh 'docker compose logs --tail=50 || true'
+            sh 'docker compose logs -n 50 || true'
         }
         always {
             sh 'docker image prune -f'
