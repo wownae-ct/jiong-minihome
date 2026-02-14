@@ -17,13 +17,13 @@ vi.mock('@/lib/auth', () => ({
   auth: vi.fn(),
 }))
 
-vi.mock('fs/promises', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('fs/promises')>()
-  return {
-    ...actual,
-    unlink: vi.fn().mockResolvedValue(undefined),
-  }
-})
+vi.mock('@/lib/s3', () => ({
+  deleteFromS3: vi.fn().mockResolvedValue(undefined),
+  extractKeyFromUrl: vi.fn().mockImplementation((url: string) => {
+    const prefix = 'http://minio.example.com:9000/portfolio-web/'
+    return url.startsWith(prefix) ? url.slice(prefix.length) : null
+  }),
+}))
 
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
@@ -77,7 +77,7 @@ describe('DELETE /api/bgm/[id]', () => {
       expires: new Date().toISOString(),
     })
 
-    const mockTrack = { id: 1, title: '곡1', filename: 'uuid.mp3', url: '/uploads/uuid.mp3' }
+    const mockTrack = { id: 1, title: '곡1', filename: 'uuid.mp3', url: 'http://minio.example.com:9000/portfolio-web/bgm/uuid.mp3' }
     vi.mocked(prisma.bgmTrack.findUnique).mockResolvedValue(mockTrack as never)
     vi.mocked(prisma.bgmTrack.delete).mockResolvedValue(mockTrack as never)
 

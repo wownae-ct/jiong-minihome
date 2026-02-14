@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { writeFile, mkdir } from 'fs/promises'
-import path from 'path'
 import { randomUUID } from 'crypto'
 import { requireAuth } from '@/lib/api/helpers'
+import { uploadToS3 } from '@/lib/s3'
 
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
 const MAX_IMAGE_FILE_SIZE = 5 * 1024 * 1024 // 5MB
@@ -66,21 +65,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 파일 저장 디렉토리 생성
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads')
-    await mkdir(uploadDir, { recursive: true })
-
-    // 고유한 파일명 생성
+    // 고유한 파일명 생성 (prefix로 파일 유형 구분)
     const extension = extensionMap[file.type] || '.jpg'
-    const filename = `${randomUUID()}${extension}`
-    const filepath = path.join(uploadDir, filename)
+    const prefix = isAudioUpload ? 'bgm' : 'uploads'
+    const key = `${prefix}/${randomUUID()}${extension}`
 
-    // 파일 저장
+    // S3에 파일 업로드
     const buffer = Buffer.from(await file.arrayBuffer())
-    await writeFile(filepath, buffer)
-
-    // 클라이언트에서 접근 가능한 URL 반환
-    const url = `/uploads/${filename}`
+    const url = await uploadToS3(buffer, key, file.type)
 
     return NextResponse.json({ url }, { status: 201 })
   } catch (error) {

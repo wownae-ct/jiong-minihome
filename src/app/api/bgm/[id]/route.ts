@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/api/helpers'
 import { prisma } from '@/lib/prisma'
 import { bgmUpdateSchema } from '@/lib/validations/bgm'
-import { unlink } from 'fs/promises'
-import path from 'path'
+import { deleteFromS3, extractKeyFromUrl } from '@/lib/s3'
 
 type RouteParams = { params: Promise<{ id: string }> }
 
@@ -22,10 +21,12 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     await prisma.bgmTrack.delete({ where: { id: trackId } })
 
-    // 파일 삭제 시도 (실패해도 무시)
+    // S3에서 파일 삭제 시도 (실패해도 무시)
     try {
-      const filePath = path.join(process.cwd(), 'public', track.url)
-      await unlink(filePath)
+      const key = extractKeyFromUrl(track.url)
+      if (key) {
+        await deleteFromS3(key)
+      }
     } catch {
       // 파일이 이미 삭제된 경우 무시
     }

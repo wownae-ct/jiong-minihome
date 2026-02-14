@@ -29,9 +29,6 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
-# uploads 디렉토리 생성 및 권한 설정
-RUN mkdir -p /app/public/uploads && chown -R nextjs:nodejs /app/public/uploads
-
 USER nextjs
 EXPOSE 3000
 ENV HOSTNAME="0.0.0.0"

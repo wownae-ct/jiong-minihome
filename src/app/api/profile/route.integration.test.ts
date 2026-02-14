@@ -52,15 +52,12 @@ vi.mock('@/lib/prisma', () => ({
   },
 }))
 
-// Mock fs/promises for upload
-vi.mock('fs/promises', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('fs/promises')>()
-  return {
-    ...actual,
-    mkdir: vi.fn().mockResolvedValue(undefined),
-    writeFile: vi.fn().mockResolvedValue(undefined),
-  }
-})
+// Mock S3 for upload
+vi.mock('@/lib/s3', () => ({
+  uploadToS3: vi.fn().mockImplementation((_buffer: Buffer, key: string) =>
+    Promise.resolve(`http://minio.example.com:9000/portfolio-web/${key}`)
+  ),
+}))
 
 import { auth } from '@/lib/auth'
 import { GET, PUT } from './route'
@@ -396,7 +393,7 @@ describe('프로필 설정 통합 테스트', () => {
 
       const uploadData = await uploadResponse.json()
       expect(uploadData.url).toBeDefined()
-      expect(uploadData.url).toMatch(/^\/uploads\//)
+      expect(uploadData.url).toMatch(/^http:\/\/minio\.example\.com:9000\/portfolio-web\/uploads\//)
       expect(uploadData.url).toMatch(/\.png$/)
     })
 
@@ -575,7 +572,7 @@ describe('프로필 설정 통합 테스트', () => {
       expect(savedProfile.linkedin).toBe(profileData.linkedin)
       expect(savedProfile.website).toBe(profileData.website)
       expect(savedProfile.imageUrl).toBe(imageUrl)
-      expect(savedProfile.imageUrl).toMatch(/^\/uploads\//)
+      expect(savedProfile.imageUrl).toMatch(/^http:\/\/minio\.example\.com:9000\/portfolio-web\/uploads\//)
     })
   })
 })

@@ -9,15 +9,12 @@ vi.mock('@/lib/auth', () => ({
   auth: vi.fn(),
 }))
 
-// Mock fs/promises
-vi.mock('fs/promises', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('fs/promises')>()
-  return {
-    ...actual,
-    mkdir: vi.fn().mockResolvedValue(undefined),
-    writeFile: vi.fn().mockResolvedValue(undefined),
-  }
-})
+// Mock S3
+vi.mock('@/lib/s3', () => ({
+  uploadToS3: vi.fn().mockImplementation((_buffer: Buffer, key: string) =>
+    Promise.resolve(`http://minio.example.com:9000/portfolio-web/${key}`)
+  ),
+}))
 
 import { auth } from '@/lib/auth'
 
@@ -86,7 +83,7 @@ describe('/api/upload', () => {
     expect(response.status).toBe(201)
 
     const data = await response.json()
-    expect(data.url).toMatch(/^\/uploads\//)
+    expect(data.url).toMatch(/^http:\/\/minio\.example\.com:9000\/portfolio-web\/uploads\//)
     expect(data.url).toMatch(/\.png$/)
   })
 
@@ -173,7 +170,7 @@ describe('/api/upload', () => {
 
     const data = await response.json()
     expect(data.url).toBeDefined()
-    expect(data.url).toMatch(/^\/uploads\//)
+    expect(data.url).toMatch(/^http:\/\/minio\.example\.com:9000\/portfolio-web\/uploads\//)
     expect(data.url).toMatch(/\.png$/)
   })
 
@@ -226,7 +223,7 @@ describe('/api/upload', () => {
       expect(response.status).toBe(201)
 
       const data = await response.json()
-      expect(data.url).toMatch(/^\/uploads\//)
+      expect(data.url).toMatch(/^http:\/\/minio\.example\.com:9000\/portfolio-web\/bgm\//)
       expect(data.url).toMatch(/\.mp3$/)
     })
 
