@@ -10,6 +10,13 @@ RUN --mount=type=cache,target=/root/.npm \
 # Stage 2: 빌드
 FROM node:20-alpine AS builder
 WORKDIR /app
+
+# next.config.ts가 빌드 시점에 읽는 환경변수
+ARG MINIO_IMAGE_HOSTNAME=localhost
+ARG MINIO_PUBLIC_URL=http://localhost:9000
+ENV MINIO_IMAGE_HOSTNAME=$MINIO_IMAGE_HOSTNAME
+ENV MINIO_PUBLIC_URL=$MINIO_PUBLIC_URL
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npx prisma generate

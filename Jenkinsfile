@@ -30,7 +30,10 @@ pipeline {
 
         stage('Build Image') {
             steps {
-                sh 'docker compose build'
+                sh '''
+                    export $(grep -E '^MINIO_IMAGE_HOSTNAME|^MINIO_PUBLIC_URL' .env.production | tr -d '"' | xargs)
+                    docker compose build
+                '''
                 sh "docker tag ${APP_NAME}:latest ${APP_NAME}:${BUILD_NUMBER}"
             }
         }

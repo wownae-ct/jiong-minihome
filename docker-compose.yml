@@ -3,6 +3,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - MINIO_IMAGE_HOSTNAME=${MINIO_IMAGE_HOSTNAME:-localhost}
+        - MINIO_PUBLIC_URL=${MINIO_PUBLIC_URL:-http://localhost:9000}
     image: portfolio-web:latest
     container_name: portfolio-web-app
     restart: unless-stopped
