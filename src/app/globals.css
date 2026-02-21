@@ -33,3 +33,101 @@
     display: none;
   }
 }
+
+/* ── TipTap 에디터 & prose 코드 블록 스타일 (Notion 스타일) ── */
+.prose pre,
+.ProseMirror pre {
+  @apply bg-slate-100 dark:bg-slate-900 rounded-lg p-4 overflow-x-auto;
+  font-family: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.875rem;
+  line-height: 1.625;
+}
+
+.prose pre code,
+.ProseMirror pre code {
+  @apply bg-transparent p-0 text-sm;
+  color: inherit;
+  font-family: inherit;
+}
+
+/* 인라인 코드 */
+.prose code:not(pre code),
+.ProseMirror code:not(pre code) {
+  @apply bg-slate-100 dark:bg-slate-800 text-red-500 dark:text-red-400 px-1.5 py-0.5 rounded text-sm font-medium;
+}
+
+.prose code:not(pre code)::before,
+.prose code:not(pre code)::after {
+  content: none;
+}
+
+/* 인용문 (blockquote) */
+.prose blockquote,
+.ProseMirror blockquote {
+  @apply border-l-4 border-primary bg-primary/5 dark:bg-primary/10 pl-4 py-2 my-4 rounded-r-lg;
+  font-style: normal;
+}
+
+.prose blockquote p,
+.ProseMirror blockquote p {
+  @apply text-slate-700 dark:text-slate-300;
+}
+
+/* ── lowlight 구문 강조 테마 ── */
+.hljs-comment,
+.hljs-quote {
+  @apply text-slate-500;
+  font-style: italic;
+}
+
+.hljs-keyword,
+.hljs-selector-tag {
+  @apply text-purple-600 dark:text-purple-400;
+  font-weight: 600;
+}
+
+.hljs-string,
+.hljs-attr,
+.hljs-addition {
+  @apply text-green-600 dark:text-green-400;
+}
+
+.hljs-number,
+.hljs-literal {
+  @apply text-orange-600 dark:text-orange-400;
+}
+
+.hljs-built_in,
+.hljs-type,
+.hljs-params {
+  @apply text-blue-600 dark:text-blue-400;
+}
+
+.hljs-title,
+.hljs-section {
+  @apply text-blue-700 dark:text-blue-300;
+  font-weight: 600;
+}
+
+.hljs-name,
+.hljs-tag {
+  @apply text-red-600 dark:text-red-400;
+}
+
+.hljs-variable,
+.hljs-template-variable {
+  @apply text-teal-600 dark:text-teal-400;
+}
+
+.hljs-deletion {
+  @apply text-red-600 dark:text-red-400;
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+.hljs-meta {
+  @apply text-slate-500 dark:text-slate-400;
+}
+
+.hljs-regexp {
+  @apply text-orange-500 dark:text-orange-400;
+}

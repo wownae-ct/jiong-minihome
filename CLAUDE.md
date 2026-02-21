@@ -131,6 +131,11 @@ Git Push → Jenkins (8080)
 - 80% 경고 로그, 90% 긴급 자동 정리
 - 프로덕션 서버에서 crontab 등록 필요: `*/30 * * * * /opt/scripts/disk-monitor.sh`
 
-## Rules
+## Rules for Design, Implementation, and Modification:
 
-- plan 모드 사용 시 반드시 다음 파일의 지침을 따르세요. docs\claude_code_prompt_for_plan_mode.md
+- **Phase-based Planning**: Split tasks into phases (High-level -> Detailed). Limit each detailed phase to <50% of session context.
+- **Todo Logging**: Update the Todo file after every phase.
+- **Path (Ref)**: docs/history/target/{planName}
+- **Path (Done)**: docs/history/complete/{planName}
+- **Indexing**: Never index docs/history/complete/ unless requested by the user.
+- Adhere to the guidelines in the following file before performing any code creation or modification: docs/claude_code_prompt_for_plan_mode.md.

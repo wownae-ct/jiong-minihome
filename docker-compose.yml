@@ -13,6 +13,9 @@ services:
       - "3000:3000"
     env_file:
       - .env.production
+    volumes:
+      - /mnt/nfs_data/uploads:/app/public/uploads
+      - /mnt/nfs_data/logs:/app/logs
     healthcheck:
       test: ["CMD", "wget", "-qO", "/dev/null", "http://127.0.0.1:3000"]
       interval: 30s

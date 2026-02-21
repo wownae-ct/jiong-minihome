@@ -72,6 +72,14 @@ describe('RichTextEditor', () => {
       ).toBeInTheDocument()
     })
 
+    it('인용문 버튼이 있어야 함', () => {
+      render(<RichTextEditor {...defaultProps} />)
+
+      expect(
+        screen.getByRole('button', { name: /인용문/i })
+      ).toBeInTheDocument()
+    })
+
     it('이미지 버튼이 있어야 함', () => {
       render(<RichTextEditor {...defaultProps} />)
 
@@ -112,6 +120,39 @@ describe('RichTextEditor', () => {
       expect(
         screen.queryByRole('button', { name: /굵게/i })
       ).not.toBeInTheDocument()
+    })
+  })
+
+  describe('코드 블록 렌더링', () => {
+    it('코드 블록 콘텐츠가 pre > code로 렌더링되어야 함', () => {
+      render(
+        <RichTextEditor
+          {...defaultProps}
+          content='<pre><code class="language-javascript">const x = 1;</code></pre>'
+        />
+      )
+
+      const preElement = document.querySelector('pre')
+      expect(preElement).toBeInTheDocument()
+
+      const codeElement = preElement?.querySelector('code')
+      expect(codeElement).toBeInTheDocument()
+      expect(codeElement?.textContent).toContain('const x = 1;')
+    })
+  })
+
+  describe('인용문 렌더링', () => {
+    it('인용문 콘텐츠가 blockquote로 렌더링되어야 함', () => {
+      render(
+        <RichTextEditor
+          {...defaultProps}
+          content="<blockquote><p>인용된 텍스트입니다.</p></blockquote>"
+        />
+      )
+
+      const blockquote = document.querySelector('blockquote')
+      expect(blockquote).toBeInTheDocument()
+      expect(blockquote?.textContent).toContain('인용된 텍스트입니다.')
     })
   })
 
