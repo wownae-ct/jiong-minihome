@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 const mockSuccess = vi.fn()
@@ -234,6 +234,50 @@ describe('ProfileSettings', () => {
     })
   })
 
+  describe('이미지 로드 실패 폴백', () => {
+    it('프로필 이미지 로드 실패 시 이니셜 아바타로 폴백해야 함', async () => {
+      mockInitialLoad({ profileImage: 'https://minio.test/bucket/uploads/broken.png' })
+
+      render(<ProfileSettings />)
+
+      await waitFor(() => {
+        expect(screen.getByAltText('Profile')).toBeTruthy()
+      })
+
+      // 이미지 로드 실패 시뮬레이션
+      const img = screen.getByAltText('Profile')
+      fireEvent.error(img)
+
+      // 이니셜 아바타가 표시되어야 함 (img 대신 텍스트)
+      expect(screen.queryByAltText('Profile')).toBeNull()
+      expect(screen.getByText('테')).toBeTruthy()
+    })
+
+    it('새 이미지 선택 시 에러 상태가 초기화되어야 함', async () => {
+      const user = userEvent.setup()
+      mockInitialLoad({ profileImage: 'https://minio.test/bucket/uploads/broken.png' })
+
+      render(<ProfileSettings />)
+
+      await waitFor(() => {
+        expect(screen.getByAltText('Profile')).toBeTruthy()
+      })
+
+      // 이미지 로드 실패 → 폴백
+      fireEvent.error(screen.getByAltText('Profile'))
+      expect(screen.queryByAltText('Profile')).toBeNull()
+
+      // 새 파일 선택 → 에러 상태 초기화, 미리보기 표시
+      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
+      await user.upload(fileInput, new File(['data'], 'new.png', { type: 'image/png' }))
+
+      await waitFor(() => {
+        const img = screen.getByAltText('Profile') as HTMLImageElement
+        expect(img.src).toContain('blob:')
+      })
+    })
+  })
+
   describe('저장 버튼 (S3 업로드 + DB 반영)', () => {
     function createMockFile() {
       return new File(['image-data'], 'profile.png', { type: 'image/png' })
@@ -368,6 +412,43 @@ describe('ProfileSettings', () => {
       )
       const body = JSON.parse(patchCall![1].body)
       expect(body.profileImage).toBe('https://minio.test/bucket/uploads/existing.png')
+    })
+
+    it('저장 성공 후 서버 응답의 profileImage를 사용해야 함', async () => {
+      const user = userEvent.setup()
+      mockInitialLoad()
+
+      render(<ProfileSettings />)
+      await waitFor(() => expect(mockFetch).toHaveBeenCalledWith('/api/users/me'))
+
+      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
+      await user.upload(fileInput, createMockFile())
+
+      // S3 업로드 URL과 PATCH 응답 URL이 다를 수 있음 (CDN 프록시 등)
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ url: 'https://minio.test/bucket/uploads/raw.png' }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({
+            id: 1, nickname: '기존닉네임', bio: '기존소개',
+            profileImage: 'https://cdn.test/optimized/raw.png',
+          }),
+        })
+
+      await user.click(screen.getByText('저장'))
+
+      await waitFor(() => {
+        expect(mockSuccess).toHaveBeenCalledWith('프로필이 수정되었습니다')
+      })
+
+      // 서버 응답의 profileImage가 사용되어야 함 (로컬 변수가 아닌)
+      await waitFor(() => {
+        const img = screen.getByAltText('Profile') as HTMLImageElement
+        expect(img.src).toContain('cdn.test/optimized')
+      })
     })
 
     it('저장 성공 후 세션 update()를 await 해야 함', async () => {

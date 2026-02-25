@@ -20,6 +20,7 @@ export function ProfileSettings() {
   const [isLoading, setIsLoading] = useState(false)
   const [profileImage, setProfileImage] = useState<string | null>(null)
   const [pendingFile, setPendingFile] = useState<File | null>(null)
+  const [imageError, setImageError] = useState(false)
   const previewUrlRef = useRef<string | null>(null)
 
   const {
@@ -70,6 +71,7 @@ export function ProfileSettings() {
     const blobUrl = URL.createObjectURL(file)
     previewUrlRef.current = blobUrl
     setProfileImage(blobUrl)
+    setImageError(false)
     setPendingFile(file)
   }
 
@@ -120,7 +122,8 @@ export function ProfileSettings() {
         previewUrlRef.current = null
       }
       setPendingFile(null)
-      setProfileImage(imageUrl)
+      setProfileImage(result.profileImage ?? imageUrl)
+      setImageError(false)
 
       reset({
         nickname: result.nickname || data.nickname,
@@ -141,11 +144,12 @@ export function ProfileSettings() {
       {/* 프로필 이미지 */}
       <div className="flex items-center gap-6">
         <div className="relative">
-          {profileImage ? (
+          {profileImage && !imageError ? (
             <img
               src={profileImage}
               alt="Profile"
               className="w-24 h-24 rounded-full object-cover"
+              onError={() => setImageError(true)}
             />
           ) : (
             <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-primary text-3xl font-bold">
