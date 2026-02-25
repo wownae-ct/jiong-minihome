@@ -26,9 +26,10 @@ interface GuestbookEntryData {
 interface GuestbookEntryProps {
   entry: GuestbookEntryData
   onDelete?: () => void
+  onMemberClick?: (userId: number) => void
 }
 
-export function GuestbookEntry({ entry, onDelete }: GuestbookEntryProps) {
+export function GuestbookEntry({ entry, onDelete, onMemberClick }: GuestbookEntryProps) {
   const { data: session } = useSession()
   const { success, error: showError } = useToast()
   const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -81,26 +82,48 @@ export function GuestbookEntry({ entry, onDelete }: GuestbookEntryProps) {
         {/* 헤더 */}
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3">
-            <ProfileAvatar
-              src={entry.user?.profileImage}
-              alt={displayName}
-              size="md"
-            />
-            <div>
-              <p className="font-medium text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                {displayName}
-                {entry.isPrivate && (
-                  <Icon
-                    name="lock"
-                    size="sm"
-                    className="text-slate-400"
-                  />
-                )}
-              </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                {formattedDate}
-              </p>
-            </div>
+            {entry.user && onMemberClick ? (
+              <button
+                onClick={() => onMemberClick(entry.user!.id)}
+                className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+              >
+                <ProfileAvatar
+                  src={entry.user.profileImage}
+                  alt={displayName}
+                  size="md"
+                />
+                <div className="text-left">
+                  <p className="font-medium text-slate-900 dark:text-slate-100 flex items-center gap-2 hover:text-primary hover:underline transition-colors">
+                    {displayName}
+                    {entry.isPrivate && (
+                      <Icon name="lock" size="sm" className="text-slate-400" />
+                    )}
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {formattedDate}
+                  </p>
+                </div>
+              </button>
+            ) : (
+              <>
+                <ProfileAvatar
+                  src={entry.user?.profileImage}
+                  alt={displayName}
+                  size="md"
+                />
+                <div>
+                  <p className="font-medium text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                    {displayName}
+                    {entry.isPrivate && (
+                      <Icon name="lock" size="sm" className="text-slate-400" />
+                    )}
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {formattedDate}
+                  </p>
+                </div>
+              </>
+            )}
           </div>
 
           {canDelete && (

@@ -1,8 +1,10 @@
 'use client'
 
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useRouter } from 'next/navigation'
 import { GuestbookEntry } from './GuestbookEntry'
 import { GuestbookForm } from './GuestbookForm'
+import { MemberProfileModal } from '@/components/community/MemberProfileModal'
 import { Pagination } from '@/components/ui/Pagination'
 import { SkeletonPost } from '@/components/ui/Skeleton'
 import { useState } from 'react'
@@ -41,7 +43,9 @@ async function fetchGuestbook(page: number): Promise<GuestbookResponse> {
 
 export function GuestbookList() {
   const [page, setPage] = useState(1)
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null)
   const queryClient = useQueryClient()
+  const router = useRouter()
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['guestbook', page],
@@ -79,6 +83,7 @@ export function GuestbookList() {
               key={entry.id}
               entry={entry}
               onDelete={handleRefresh}
+              onMemberClick={setSelectedUserId}
             />
           ))
         )}
@@ -94,6 +99,13 @@ export function GuestbookList() {
           />
         </div>
       )}
+      {/* 회원 프로필 모달 */}
+      <MemberProfileModal
+        isOpen={selectedUserId !== null}
+        onClose={() => setSelectedUserId(null)}
+        userId={selectedUserId}
+        onPostClick={(postId, categorySlug) => router.push(`/community/${categorySlug}/${postId}`)}
+      />
     </div>
   )
 }

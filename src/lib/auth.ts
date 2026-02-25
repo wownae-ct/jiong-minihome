@@ -40,8 +40,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, user, account }) {
-      return handleJwtCallback({ token, user, account })
+    async jwt({ token, user, account, trigger }) {
+      return handleJwtCallback({ token, user, account, trigger })
     },
     async session({ session, token }) {
       return handleSessionCallback({ session, token })

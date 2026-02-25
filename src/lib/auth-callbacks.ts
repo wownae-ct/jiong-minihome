@@ -50,15 +50,30 @@ export async function handleJwtCallback({
   token,
   user,
   account,
+  trigger,
 }: {
   token: JWT
-  user: { id?: string; role?: string }
+  user?: { id?: string; role?: string }
   account?: Account | null
+  trigger?: string
 }) {
   if (user) {
     token.id = user.id
     token.role = (user as { role?: string }).role || 'user'
     token.picture = (user as { image?: string }).image || token.picture
+  }
+
+  // 세션 업데이트 요청 시 DB에서 최신 사용자 정보 반영
+  if (trigger === 'update' && token.id) {
+    const freshUser = await prisma.user.findUnique({
+      where: { id: parseInt(token.id as string) },
+      select: { profileImage: true, nickname: true, role: true },
+    })
+    if (freshUser) {
+      token.picture = freshUser.profileImage || undefined
+      token.name = freshUser.nickname
+      token.role = freshUser.role
+    }
   }
 
   // OAuth 로그인 시 사용자 생성/연결

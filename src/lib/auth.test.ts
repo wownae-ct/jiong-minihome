@@ -436,6 +436,39 @@ describe('handleJwtCallback', () => {
     expect(prisma.user.create).toHaveBeenCalledTimes(4)
   })
 
+  it('trigger가 "update"이면 DB에서 최신 사용자 정보를 가져와야 함', async () => {
+    vi.mocked(prisma.user.findUnique).mockResolvedValue(
+      makeUser({ id: 1, profileImage: 'https://new-image.com/pic.jpg', nickname: 'updatedName' })
+    )
+
+    const token = { id: '1', role: 'user', picture: 'https://old-image.com/pic.jpg', name: 'oldName' }
+
+    const result = await handleJwtCallback({
+      token: token as never,
+      trigger: 'update',
+    })
+
+    expect(result.picture).toBe('https://new-image.com/pic.jpg')
+    expect(result.name).toBe('updatedName')
+    expect(prisma.user.findUnique).toHaveBeenCalledWith({
+      where: { id: 1 },
+      select: { profileImage: true, nickname: true, role: true },
+    })
+  })
+
+  it('trigger가 "update"이고 사용자가 없으면 token을 그대로 반환해야 함', async () => {
+    vi.mocked(prisma.user.findUnique).mockResolvedValue(null)
+
+    const token = { id: '999', role: 'user', picture: 'https://old.com/pic.jpg' }
+
+    const result = await handleJwtCallback({
+      token: token as never,
+      trigger: 'update',
+    })
+
+    expect(result.picture).toBe('https://old.com/pic.jpg')
+  })
+
   it('P2002 외의 Prisma 에러는 즉시 throw해야 함', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue(null)
 
