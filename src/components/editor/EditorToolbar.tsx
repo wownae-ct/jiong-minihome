@@ -101,9 +101,9 @@ export function EditorToolbar({
   const handleSetFontSize = useCallback(
     (size: string) => {
       if (size === '') {
-        editor.chain().focus().unsetMark('textStyle').run()
+        editor.chain().focus().unsetFontSize().run()
       } else {
-        editor.chain().focus().setMark('textStyle', { fontSize: size }).run()
+        editor.chain().focus().setFontSize(size).run()
       }
     },
     [editor]
@@ -279,6 +279,7 @@ export function EditorToolbar({
         ref={fileInputRef}
         type="file"
         accept="image/*"
+        multiple
         onChange={onImageUpload}
         className="hidden"
       />

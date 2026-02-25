@@ -201,6 +201,43 @@ export function PortfolioWriteModal({
     []
   )
 
+  const handleVideoUpload = useCallback(
+    async (file: File): Promise<string> => {
+      const presignRes = await fetch('/api/upload/presign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contentType: file.type,
+          fileSize: file.size,
+        }),
+      })
+
+      if (!presignRes.ok) {
+        const data = await presignRes.json()
+        throw new Error(data.error || '동영상 업로드 준비에 실패했습니다')
+      }
+
+      const { presignedUrl, publicUrl } = await presignRes.json()
+
+      const uploadRes = await fetch(presignedUrl, {
+        method: 'PUT',
+        body: file,
+        headers: { 'Content-Type': file.type },
+      })
+
+      if (!uploadRes.ok) {
+        throw new Error('동영상 업로드에 실패했습니다')
+      }
+
+      return publicUrl
+    },
+    []
+  )
+
+  const handleUploadError = useCallback((error: Error) => {
+    toast.toast(error.message || '파일 업로드에 실패했습니다.', 'error')
+  }, [toast])
+
   const handleRemoveImage = () => {
     setValue('image', null)
     setPreviewUrl(null)
@@ -293,6 +330,8 @@ export function PortfolioWriteModal({
               placeholder="프로젝트 상세 내용을 작성하세요."
               error={errors.content?.message}
               onImageUpload={handleImageUpload}
+              onVideoUpload={handleVideoUpload}
+              onUploadError={handleUploadError}
             />
           )}
         />

@@ -6,6 +6,7 @@ import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import Image from '@tiptap/extension-image'
 import { TextStyle } from '@tiptap/extension-text-style'
+import { FontSize } from '@tiptap/extension-text-style/font-size'
 import { Color } from '@tiptap/extension-color'
 import { Underline } from '@tiptap/extension-underline'
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
@@ -25,6 +26,8 @@ interface RichTextEditorProps {
   editable?: boolean
   onImageUpload?: (file: File) => Promise<string>
   onVideoUpload?: (file: File) => Promise<string>
+  onUploadError?: (error: Error) => void
+  maxImages?: number
 }
 
 export function RichTextEditor({
@@ -36,6 +39,8 @@ export function RichTextEditor({
   editable = true,
   onImageUpload,
   onVideoUpload,
+  onUploadError,
+  maxImages,
 }: RichTextEditorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
@@ -51,6 +56,7 @@ export function RichTextEditor({
         HTMLAttributes: { class: 'max-w-full h-auto rounded-lg' },
       }),
       TextStyle,
+      FontSize,
       Color,
       Underline,
       CodeBlockLowlight.configure({ lowlight }),
@@ -78,7 +84,15 @@ export function RichTextEditor({
         event.preventDefault()
 
         const processImages = async () => {
+          let currentCount = 0
+          view.state.doc.descendants((node) => {
+            if (node.type.name === 'image') currentCount++
+          })
+          let uploaded = 0
+
           for (const item of imageItems) {
+            if (maxImages !== undefined && currentCount + uploaded >= maxImages) break
+
             const file = item.getAsFile()
             if (!file || file.size > 5 * 1024 * 1024) continue
 
@@ -88,9 +102,12 @@ export function RichTextEditor({
               const { tr } = state
               const pos = state.selection.from
               const node = state.schema.nodes.image?.create({ src: url })
-              if (node) view.dispatch(tr.insert(pos, node))
-            } catch {
-              // 에러 처리는 onImageUpload에서 담당
+              if (node) {
+                view.dispatch(tr.insert(pos, node))
+                uploaded++
+              }
+            } catch (err) {
+              onUploadError?.(err instanceof Error ? err : new Error('이미지 업로드에 실패했습니다'))
             }
           }
         }
@@ -117,21 +134,38 @@ export function RichTextEditor({
     }
   }, [content, editor])
 
+  const countEditorImages = useCallback(() => {
+    if (!editor) return 0
+    let count = 0
+    editor.state.doc.descendants((node) => {
+      if (node.type.name === 'image') count++
+    })
+    return count
+  }, [editor])
+
   const handleImageUpload = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
-      const file = event.target.files?.[0]
-      if (!file || !onImageUpload || !editor) return
+      const files = event.target.files
+      if (!files || files.length === 0 || !onImageUpload || !editor) return
 
-      try {
-        const url = await onImageUpload(file)
-        editor.chain().focus().setImage({ src: url }).run()
-      } catch {
-        // 에러 처리는 onImageUpload에서 담당
+      let uploaded = 0
+      const currentCount = countEditorImages()
+
+      for (const file of Array.from(files)) {
+        if (maxImages !== undefined && currentCount + uploaded >= maxImages) break
+
+        try {
+          const url = await onImageUpload(file)
+          editor.chain().focus().setImage({ src: url }).run()
+          uploaded++
+        } catch (err) {
+          onUploadError?.(err instanceof Error ? err : new Error('이미지 업로드에 실패했습니다'))
+        }
       }
 
       if (fileInputRef.current) fileInputRef.current.value = ''
     },
-    [editor, onImageUpload]
+    [editor, onImageUpload, onUploadError, maxImages, countEditorImages]
   )
 
   const handleVideoUpload = useCallback(
@@ -149,13 +183,13 @@ export function RichTextEditor({
             `<video controls class="max-w-full rounded-lg"><source src="${url}" type="${file.type}"></video>`
           )
           .run()
-      } catch {
-        // 에러 처리는 onVideoUpload에서 담당
+      } catch (err) {
+        onUploadError?.(err instanceof Error ? err : new Error('동영상 업로드에 실패했습니다'))
       }
 
       if (videoInputRef.current) videoInputRef.current.value = ''
     },
-    [editor, onVideoUpload]
+    [editor, onVideoUpload, onUploadError]
   )
 
   const handleDragEnter = useCallback((e: DragEvent<HTMLDivElement>) => {
@@ -188,11 +222,16 @@ export function RichTextEditor({
 
       setIsUploadingDrop(true)
       try {
+        let imageUploaded = 0
+        const currentImageCount = countEditorImages()
+
         for (const file of Array.from(files)) {
           if (file.type.startsWith('image/') && onImageUpload) {
+            if (maxImages !== undefined && currentImageCount + imageUploaded >= maxImages) break
             if (file.size > 5 * 1024 * 1024) continue
             const url = await onImageUpload(file)
             editor.chain().focus().setImage({ src: url }).run()
+            imageUploaded++
           } else if (file.type.startsWith('video/') && onVideoUpload) {
             if (file.size > 50 * 1024 * 1024) continue
             const url = await onVideoUpload(file)
@@ -205,13 +244,13 @@ export function RichTextEditor({
               .run()
           }
         }
-      } catch {
-        // 에러 처리는 콜백에서 담당
+      } catch (err) {
+        onUploadError?.(err instanceof Error ? err : new Error('파일 업로드에 실패했습니다'))
       } finally {
         setIsUploadingDrop(false)
       }
     },
-    [editor, onImageUpload, onVideoUpload]
+    [editor, onImageUpload, onVideoUpload, onUploadError, maxImages, countEditorImages]
   )
 
   if (!editor) return null

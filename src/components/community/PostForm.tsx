@@ -78,37 +78,9 @@ export function PostForm({ initialData, guestPassword, onCancel, onSuccess }: Po
     return url
   }, [])
 
-  const handleVideoUpload = useCallback(async (file: File): Promise<string> => {
-    // 1. Presigned URL 요청
-    const presignRes = await fetch('/api/upload/presign', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contentType: file.type,
-        fileSize: file.size,
-      }),
-    })
-
-    if (!presignRes.ok) {
-      const data = await presignRes.json()
-      throw new Error(data.error || '비디오 업로드 준비에 실패했습니다')
-    }
-
-    const { presignedUrl, publicUrl } = await presignRes.json()
-
-    // 2. 브라우저에서 MinIO로 직접 업로드
-    const uploadRes = await fetch(presignedUrl, {
-      method: 'PUT',
-      body: file,
-      headers: { 'Content-Type': file.type },
-    })
-
-    if (!uploadRes.ok) {
-      throw new Error('비디오 업로드에 실패했습니다')
-    }
-
-    return publicUrl
-  }, [])
+  const handleUploadError = useCallback((error: Error) => {
+    showError(error.message || '파일 업로드에 실패했습니다')
+  }, [showError])
 
   const onSubmit = async (data: PostFormData) => {
     setIsLoading(true)
@@ -224,7 +196,8 @@ export function PostForm({ initialData, guestPassword, onCancel, onSuccess }: Po
             placeholder="내용을 입력하세요..."
             error={errors.content?.message}
             onImageUpload={session ? handleImageUpload : undefined}
-            onVideoUpload={session ? handleVideoUpload : undefined}
+            onUploadError={handleUploadError}
+            maxImages={10}
           />
         )}
       />
