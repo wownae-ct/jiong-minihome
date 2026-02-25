@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useForm } from 'react-hook-form'
 import { Input } from '@/components/ui/Input'
@@ -19,6 +19,8 @@ export function ProfileSettings() {
   const { success, error: showError } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [profileImage, setProfileImage] = useState<string | null>(null)
+  const [pendingFile, setPendingFile] = useState<File | null>(null)
+  const previewUrlRef = useRef<string | null>(null)
 
   const {
     register,
@@ -26,6 +28,15 @@ export function ProfileSettings() {
     formState: { errors },
     reset,
   } = useForm<ProfileForm>()
+
+  // blob URL 정리
+  useEffect(() => {
+    return () => {
+      if (previewUrlRef.current) {
+        URL.revokeObjectURL(previewUrlRef.current)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     // 마운트 시 서버에서 프로필 데이터 로드 (session 변경에 의존하지 않음)
@@ -46,13 +57,54 @@ export function ProfileSettings() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // 이전 blob URL 정리
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current)
+    }
+
+    // 브라우저 메모리에서 미리보기 생성 (서버 호출 없음)
+    const blobUrl = URL.createObjectURL(file)
+    previewUrlRef.current = blobUrl
+    setProfileImage(blobUrl)
+    setPendingFile(file)
+  }
+
   const onSubmit = async (data: ProfileForm) => {
     setIsLoading(true)
     try {
+      let imageUrl = profileImage
+
+      // 대기 중인 파일이 있으면 S3에 업로드
+      if (pendingFile) {
+        const formData = new FormData()
+        formData.append('file', pendingFile)
+        formData.append('type', 'profile')
+
+        const uploadResponse = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        })
+
+        if (!uploadResponse.ok) {
+          showError('이미지 업로드에 실패했습니다')
+          return
+        }
+
+        const { url } = await uploadResponse.json()
+        imageUrl = url
+      }
+
       const response = await fetch('/api/users/me', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          ...(imageUrl ? { profileImage: imageUrl } : {}),
+        }),
       })
 
       const result = await response.json()
@@ -62,54 +114,25 @@ export function ProfileSettings() {
         return
       }
 
-      // 저장된 데이터로 폼 즉시 업데이트
+      // 저장 완료: blob URL 정리 및 S3 URL로 교체
+      if (previewUrlRef.current) {
+        URL.revokeObjectURL(previewUrlRef.current)
+        previewUrlRef.current = null
+      }
+      setPendingFile(null)
+      setProfileImage(imageUrl)
+
       reset({
         nickname: result.nickname || data.nickname,
         bio: result.bio ?? data.bio,
       })
 
       success('프로필이 수정되었습니다')
-      update()
+      await update()
     } catch {
       showError('프로필 수정 중 오류가 발생했습니다')
     } finally {
       setIsLoading(false)
-    }
-  }
-
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('type', 'profile')
-
-    try {
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      })
-
-      if (!response.ok) {
-        showError('이미지 업로드에 실패했습니다')
-        return
-      }
-
-      const { url } = await response.json()
-      setProfileImage(url)
-
-      // 프로필 이미지 업데이트
-      await fetch('/api/users/me', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profileImage: url }),
-      })
-
-      success('프로필 이미지가 변경되었습니다')
-      update()
-    } catch {
-      showError('이미지 업로드 중 오류가 발생했습니다')
     }
   }
 
