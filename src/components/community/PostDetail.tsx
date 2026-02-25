@@ -9,6 +9,8 @@ import { useToast } from '@/components/providers/ToastProvider'
 import { LikeButton } from '@/components/common/LikeButton'
 import { PasswordModal } from '@/components/common/PasswordModal'
 import { DeleteConfirmModal } from '@/components/common/DeleteConfirmModal'
+import { ProfileAvatar } from '@/components/common/ProfileAvatar'
+import { sanitizeHtml, isHtmlContent } from '@/lib/sanitize'
 
 interface PostDetailProps {
   post: {
@@ -163,17 +165,11 @@ export function PostDetail({ post, onBack, onEdit, onDelete, onMemberClick }: Po
                   onClick={() => onMemberClick(post.user!.id)}
                   className="flex items-center gap-3 hover:opacity-80 transition-opacity"
                 >
-                  {post.user.profileImage ? (
-                    <img
-                      src={post.user.profileImage}
-                      alt={post.user.nickname}
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
-                      {post.user.nickname[0]?.toUpperCase() || '?'}
-                    </div>
-                  )}
+                  <ProfileAvatar
+                    src={post.user.profileImage}
+                    alt={post.user.nickname}
+                    size="md"
+                  />
                   <div className="text-left">
                     <p className="font-medium text-slate-900 dark:text-slate-100 hover:text-primary hover:underline transition-colors">
                       {post.user.nickname}
@@ -220,9 +216,16 @@ export function PostDetail({ post, onBack, onEdit, onDelete, onMemberClick }: Po
 
         {/* 본문 */}
         <div className="p-6">
-          <div className="prose dark:prose-invert max-w-none whitespace-pre-wrap">
-            {post.content}
-          </div>
+          {isHtmlContent(post.content) ? (
+            <div
+              className="prose dark:prose-invert max-w-none"
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.content) }}
+            />
+          ) : (
+            <div className="prose dark:prose-invert max-w-none whitespace-pre-wrap">
+              {post.content}
+            </div>
+          )}
         </div>
 
         {/* 하단 액션 */}

@@ -151,6 +151,34 @@ describe('handleJwtCallback', () => {
     expect(result.role).toBe('admin')
   })
 
+  it('credentials 로그인 시 token에 picture(프로필 이미지)를 설정해야 함', async () => {
+    const token = { email: 'test@test.com' }
+    const user = { id: '1', role: 'user', image: 'https://example.com/profile.jpg' }
+    const account = { provider: 'credentials' }
+
+    const result = await handleJwtCallback({
+      token: token as never,
+      user: user as never,
+      account: account as never,
+    })
+
+    expect(result.picture).toBe('https://example.com/profile.jpg')
+  })
+
+  it('user에 image가 없을 때 기존 token.picture를 유지해야 함', async () => {
+    const token = { email: 'test@test.com', picture: 'https://existing.com/pic.jpg' }
+    const user = { id: '1', role: 'user' }
+    const account = { provider: 'credentials' }
+
+    const result = await handleJwtCallback({
+      token: token as never,
+      user: user as never,
+      account: account as never,
+    })
+
+    expect(result.picture).toBe('https://existing.com/pic.jpg')
+  })
+
   it('user에 role이 없으면 기본값 "user"를 설정해야 함', async () => {
     const token = { email: 'test@test.com' }
     const user = { id: '1' }
@@ -467,5 +495,35 @@ describe('handleSessionCallback', () => {
 
     expect(result.user.id).toBe('42')
     expect(result.user.role).toBe('admin')
+  })
+
+  it('session.user에 image(프로필 이미지)를 설정해야 함', async () => {
+    const session = {
+      user: { id: '', email: 'test@test.com', name: 'Test', role: '', image: undefined },
+      expires: '',
+    }
+    const token = { id: '42', role: 'user', picture: 'https://example.com/profile.jpg' }
+
+    const result = await handleSessionCallback({
+      session: session as never,
+      token: token as never,
+    })
+
+    expect(result.user.image).toBe('https://example.com/profile.jpg')
+  })
+
+  it('token.picture가 없으면 session.user.image는 undefined여야 함', async () => {
+    const session = {
+      user: { id: '', email: 'test@test.com', name: 'Test', role: '' },
+      expires: '',
+    }
+    const token = { id: '42', role: 'user' }
+
+    const result = await handleSessionCallback({
+      session: session as never,
+      token: token as never,
+    })
+
+    expect(result.user.image).toBeUndefined()
   })
 })

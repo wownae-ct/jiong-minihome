@@ -9,6 +9,7 @@ import { TextStyle } from '@tiptap/extension-text-style'
 import { Color } from '@tiptap/extension-color'
 import { Underline } from '@tiptap/extension-underline'
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
+import Youtube from '@tiptap/extension-youtube'
 import { common, createLowlight } from 'lowlight'
 import { Icon } from '@/components/ui/Icon'
 import { EditorToolbar } from './EditorToolbar'
@@ -23,6 +24,7 @@ interface RichTextEditorProps {
   error?: string
   editable?: boolean
   onImageUpload?: (file: File) => Promise<string>
+  onVideoUpload?: (file: File) => Promise<string>
 }
 
 export function RichTextEditor({
@@ -33,8 +35,10 @@ export function RichTextEditor({
   error,
   editable = true,
   onImageUpload,
+  onVideoUpload,
 }: RichTextEditorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const videoInputRef = useRef<HTMLInputElement>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [isUploadingDrop, setIsUploadingDrop] = useState(false)
 
@@ -50,6 +54,11 @@ export function RichTextEditor({
       Color,
       Underline,
       CodeBlockLowlight.configure({ lowlight }),
+      Youtube.configure({
+        HTMLAttributes: { class: 'w-full aspect-video rounded-lg' },
+        width: 640,
+        height: 360,
+      }),
     ],
     content,
     editable,
@@ -125,6 +134,30 @@ export function RichTextEditor({
     [editor, onImageUpload]
   )
 
+  const handleVideoUpload = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0]
+      if (!file || !onVideoUpload || !editor) return
+
+      try {
+        const url = await onVideoUpload(file)
+        // video 태그를 HTML로 삽입
+        editor
+          .chain()
+          .focus()
+          .insertContent(
+            `<video controls class="max-w-full rounded-lg"><source src="${url}" type="${file.type}"></video>`
+          )
+          .run()
+      } catch {
+        // 에러 처리는 onVideoUpload에서 담당
+      }
+
+      if (videoInputRef.current) videoInputRef.current.value = ''
+    },
+    [editor, onVideoUpload]
+  )
+
   const handleDragEnter = useCallback((e: DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     e.stopPropagation()
@@ -148,28 +181,37 @@ export function RichTextEditor({
       e.stopPropagation()
       setIsDragging(false)
 
-      if (!onImageUpload || !editor) return
+      if (!editor) return
 
       const files = e.dataTransfer.files
       if (!files || files.length === 0) return
 
-      const imageFiles = Array.from(files).filter((file) => file.type.startsWith('image/'))
-      if (imageFiles.length === 0) return
-
       setIsUploadingDrop(true)
       try {
-        for (const file of imageFiles) {
-          if (file.size > 5 * 1024 * 1024) continue
-          const url = await onImageUpload(file)
-          editor.chain().focus().setImage({ src: url }).run()
+        for (const file of Array.from(files)) {
+          if (file.type.startsWith('image/') && onImageUpload) {
+            if (file.size > 5 * 1024 * 1024) continue
+            const url = await onImageUpload(file)
+            editor.chain().focus().setImage({ src: url }).run()
+          } else if (file.type.startsWith('video/') && onVideoUpload) {
+            if (file.size > 50 * 1024 * 1024) continue
+            const url = await onVideoUpload(file)
+            editor
+              .chain()
+              .focus()
+              .insertContent(
+                `<video controls class="max-w-full rounded-lg"><source src="${url}" type="${file.type}"></video>`
+              )
+              .run()
+          }
         }
       } catch {
-        // 에러 처리는 onImageUpload에서 담당
+        // 에러 처리는 콜백에서 담당
       } finally {
         setIsUploadingDrop(false)
       }
     },
-    [editor, onImageUpload]
+    [editor, onImageUpload, onVideoUpload]
   )
 
   if (!editor) return null
@@ -192,7 +234,9 @@ export function RichTextEditor({
           <EditorToolbar
             editor={editor}
             fileInputRef={fileInputRef}
+            videoInputRef={videoInputRef}
             onImageUpload={handleImageUpload}
+            onVideoUpload={onVideoUpload ? handleVideoUpload : undefined}
           />
         )}
 
@@ -207,7 +251,7 @@ export function RichTextEditor({
             <div className="absolute inset-0 bg-primary/10 flex items-center justify-center z-10 pointer-events-none">
               <div className="bg-white dark:bg-slate-800 px-4 py-2 rounded-lg shadow-lg flex items-center gap-2">
                 <Icon name="cloud_upload" className="text-primary" />
-                <span className="text-primary font-medium">이미지를 놓으세요</span>
+                <span className="text-primary font-medium">파일을 놓으세요</span>
               </div>
             </div>
           )}

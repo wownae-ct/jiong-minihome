@@ -4,6 +4,7 @@ const mockSend = vi.fn().mockResolvedValue({})
 
 const MockPutObjectCommand = vi.fn()
 const MockDeleteObjectCommand = vi.fn()
+const mockGetSignedUrl = vi.fn().mockResolvedValue('https://minio.example.com:9000/presigned-url')
 
 vi.mock('@aws-sdk/client-s3', () => {
   return {
@@ -24,6 +25,10 @@ vi.mock('@aws-sdk/client-s3', () => {
     },
   }
 })
+
+vi.mock('@aws-sdk/s3-request-presigner', () => ({
+  getSignedUrl: (...args: unknown[]) => mockGetSignedUrl(...args),
+}))
 
 describe('S3 유틸리티', () => {
   beforeEach(() => {
@@ -133,6 +138,45 @@ describe('S3 유틸리티', () => {
       const { extractKeyFromUrl } = await import('./s3')
 
       expect(extractKeyFromUrl('')).toBeNull()
+    })
+  })
+
+  describe('createPresignedUploadUrl', () => {
+    it('presigned URL을 반환해야 한다', async () => {
+      const { createPresignedUploadUrl } = await import('./s3')
+
+      const url = await createPresignedUploadUrl('uploads/test.mp4', 'video/mp4')
+
+      expect(url).toBe('https://minio.example.com:9000/presigned-url')
+      expect(MockPutObjectCommand).toHaveBeenCalledWith({
+        Bucket: 'portfolio-web',
+        Key: 'uploads/test.mp4',
+        ContentType: 'video/mp4',
+      })
+    })
+
+    it('기본 만료 시간은 300초여야 한다', async () => {
+      const { createPresignedUploadUrl } = await import('./s3')
+
+      await createPresignedUploadUrl('uploads/test.mp4', 'video/mp4')
+
+      expect(mockGetSignedUrl).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        { expiresIn: 300 }
+      )
+    })
+
+    it('커스텀 만료 시간을 설정할 수 있어야 한다', async () => {
+      const { createPresignedUploadUrl } = await import('./s3')
+
+      await createPresignedUploadUrl('uploads/test.mp4', 'video/mp4', 600)
+
+      expect(mockGetSignedUrl).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        { expiresIn: 600 }
+      )
     })
   })
 })

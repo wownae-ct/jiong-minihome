@@ -156,6 +156,51 @@ describe('RichTextEditor', () => {
     })
   })
 
+  describe('비디오 업로드', () => {
+    it('onVideoUpload prop이 있으면 비디오 업로드 버튼이 표시되어야 함', () => {
+      const onVideoUpload = vi.fn().mockResolvedValue('/uploads/test.mp4')
+
+      render(
+        <RichTextEditor
+          {...defaultProps}
+          onVideoUpload={onVideoUpload}
+        />
+      )
+
+      expect(
+        screen.getByRole('button', { name: /동영상/i })
+      ).toBeInTheDocument()
+    })
+  })
+
+  describe('YouTube 임베드', () => {
+    it('YouTube 버튼이 표시되어야 함', () => {
+      render(<RichTextEditor {...defaultProps} />)
+
+      expect(
+        screen.getByRole('button', { name: /YouTube/i })
+      ).toBeInTheDocument()
+    })
+  })
+
+  describe('글자 색상', () => {
+    it('글자 색상 버튼이 표시되어야 함', () => {
+      render(<RichTextEditor {...defaultProps} />)
+
+      expect(
+        screen.getByRole('button', { name: /글자 색상/i })
+      ).toBeInTheDocument()
+    })
+  })
+
+  describe('글자 크기', () => {
+    it('글자 크기 선택이 표시되어야 함', () => {
+      render(<RichTextEditor {...defaultProps} />)
+
+      expect(screen.getByTitle('글자 크기')).toBeInTheDocument()
+    })
+  })
+
   describe('외부 content prop 변경', () => {
     it('content prop이 변경되면 에디터 내용이 업데이트되어야 함', async () => {
       const onChange = vi.fn()

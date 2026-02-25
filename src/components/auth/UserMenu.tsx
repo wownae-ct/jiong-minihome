@@ -5,6 +5,7 @@ import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import { Icon } from "@/components/ui/Icon";
 import { useTab } from "@/components/providers/TabContext";
+import { ProfileAvatar } from "@/components/common/ProfileAvatar";
 
 export function UserMenu() {
     const { data: session } = useSession();
@@ -62,17 +63,11 @@ export function UserMenu() {
                 onClick={() => setIsOpen(!isOpen)}
                 className="flex items-center gap-2 p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
             >
-                {session.user.image ? (
-                    <img
-                        src={session.user.image}
-                        alt={session.user.name || ""}
-                        className="w-8 h-8 rounded-full object-cover"
-                    />
-                ) : (
-                    <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-sm font-medium">
-                        {session.user.name?.[0]?.toUpperCase() || "U"}
-                    </div>
-                )}
+                <ProfileAvatar
+                    src={session.user.image}
+                    alt={session.user.name || "U"}
+                    size="sm"
+                />
                 <Icon name="expand_more" size="sm" />
             </button>
 

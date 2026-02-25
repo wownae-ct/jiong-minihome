@@ -6,6 +6,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Icon } from '@/components/ui/Icon'
 import { Pagination } from '@/components/ui/Pagination'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { ProfileAvatar } from '@/components/common/ProfileAvatar'
 
 interface UserProfile {
   id: number
@@ -123,17 +124,12 @@ export function MemberProfileModal({
         <div className="space-y-6">
           {/* 프로필 헤더 */}
           <div className="flex items-start gap-4">
-            {profile.profileImage ? (
-              <img
-                src={profile.profileImage}
-                alt={profile.nickname}
-                className="w-16 h-16 rounded-full object-cover flex-shrink-0"
-              />
-            ) : (
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xl font-bold flex-shrink-0">
-                {profile.nickname[0]}
-              </div>
-            )}
+            <ProfileAvatar
+              src={profile.profileImage}
+              alt={profile.nickname}
+              size="lg"
+              className="flex-shrink-0"
+            />
             <div className="min-w-0">
               <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
                 {profile.nickname}

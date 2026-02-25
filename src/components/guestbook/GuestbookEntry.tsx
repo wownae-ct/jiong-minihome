@@ -7,6 +7,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { useToast } from '@/components/providers/ToastProvider'
+import { ProfileAvatar } from '@/components/common/ProfileAvatar'
 
 interface GuestbookEntryData {
   id: number
@@ -80,17 +81,11 @@ export function GuestbookEntry({ entry, onDelete }: GuestbookEntryProps) {
         {/* 헤더 */}
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3">
-            {entry.user?.profileImage ? (
-              <img
-                src={entry.user.profileImage}
-                alt={displayName}
-                className="w-10 h-10 rounded-full object-cover"
-              />
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
-                {displayName[0]?.toUpperCase()}
-              </div>
-            )}
+            <ProfileAvatar
+              src={entry.user?.profileImage}
+              alt={displayName}
+              size="md"
+            />
             <div>
               <p className="font-medium text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 {displayName}

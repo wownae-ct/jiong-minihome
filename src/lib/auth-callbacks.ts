@@ -58,6 +58,7 @@ export async function handleJwtCallback({
   if (user) {
     token.id = user.id
     token.role = (user as { role?: string }).role || 'user'
+    token.picture = (user as { image?: string }).image || token.picture
   }
 
   // OAuth 로그인 시 사용자 생성/연결
@@ -168,6 +169,7 @@ export async function handleSessionCallback({
   if (session.user) {
     session.user.id = token.id as string
     session.user.role = token.role as string
+    session.user.image = (token.picture as string) || undefined
   }
   return session
 }

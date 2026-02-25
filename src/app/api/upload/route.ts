@@ -33,8 +33,9 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File | null
     const uploadType = formData.get('type') as string | null
 
-    // 프로필 이미지는 모든 인증된 사용자 허용, 나머지는 admin만
-    if (uploadType !== 'profile' && session.user.role !== 'admin') {
+    // 프로필 이미지와 게시글 이미지는 모든 인증된 사용자 허용, 나머지는 admin만
+    const userAllowedTypes = ['profile', 'post']
+    if (!userAllowedTypes.includes(uploadType || '') && session.user.role !== 'admin') {
       return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 403 })
     }
 

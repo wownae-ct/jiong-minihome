@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { postSchema, guestPostSchema } from '@/lib/validations/post'
 import { parsePagination, formatZodError } from '@/lib/api/helpers'
+import { sanitizeHtml } from '@/lib/sanitize'
 
 const VALID_SEARCH_TYPES = ['title', 'content', 'author', 'titleComment'] as const
 
@@ -156,7 +157,7 @@ export async function POST(request: NextRequest) {
     const post = await prisma.post.create({
       data: {
         title,
-        content,
+        content: sanitizeHtml(content),
         categoryId,
         isPrivate: isPrivate || false,
         ...guestData,

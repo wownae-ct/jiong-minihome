@@ -7,6 +7,7 @@ import { CommentForm } from './CommentForm'
 import { useToast } from '@/components/providers/ToastProvider'
 import { PasswordModal } from '@/components/common/PasswordModal'
 import { DeleteConfirmModal } from '@/components/common/DeleteConfirmModal'
+import { ProfileAvatar } from '@/components/common/ProfileAvatar'
 
 interface CommentData {
   id: number
@@ -122,34 +123,22 @@ export function CommentItem({
                 onClick={() => onMemberClick(comment.user!.id)}
                 className="flex items-center gap-2 hover:opacity-80 transition-opacity"
               >
-                {comment.user.profileImage ? (
-                  <img
-                    src={comment.user.profileImage}
-                    alt={comment.user.nickname}
-                    className="w-8 h-8 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-sm font-medium">
-                    {comment.user.nickname[0]?.toUpperCase() || '?'}
-                  </div>
-                )}
+                <ProfileAvatar
+                  src={comment.user.profileImage}
+                  alt={comment.user.nickname}
+                  size="sm"
+                />
                 <span className="font-medium text-slate-900 dark:text-slate-100 text-sm hover:text-primary hover:underline transition-colors">
                   {comment.user.nickname}
                 </span>
               </button>
             ) : (
               <>
-                {comment.user?.profileImage ? (
-                  <img
-                    src={comment.user.profileImage}
-                    alt={comment.user.nickname}
-                    className="w-8 h-8 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-sm font-medium">
-                    {authorName[0]?.toUpperCase() || '?'}
-                  </div>
-                )}
+                <ProfileAvatar
+                  src={comment.user?.profileImage}
+                  alt={authorName}
+                  size="sm"
+                />
                 <span className="font-medium text-slate-900 dark:text-slate-100 text-sm">
                   {authorName}
                 </span>

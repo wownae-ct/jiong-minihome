@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { postSchema } from '@/lib/validations/post'
 import { parseId, verifyGuestPassword } from '@/lib/api/helpers'
+import { sanitizeHtml } from '@/lib/sanitize'
 
 // GET: 게시글 상세 조회
 export async function GET(
@@ -118,7 +119,7 @@ export async function PUT(
       where: { id: postId },
       data: {
         title,
-        content,
+        content: sanitizeHtml(content),
         categoryId,
         isPrivate: isPrivate || false,
       },
