@@ -131,7 +131,7 @@ export function ProfileSettings() {
       })
 
       success('프로필이 수정되었습니다')
-      await update()
+      await update({})
     } catch {
       showError('프로필 수정 중 오류가 발생했습니다')
     } finally {

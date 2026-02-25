@@ -95,6 +95,7 @@ export async function handleJwtCallback({
 
       token.id = String(existingUser.id)
       token.role = existingUser.role
+      token.picture = existingUser.profileImage || token.picture
 
       // OAuth 계정 연결 (upsert로 TOCTOU 방지 + 토큰 갱신)
       await prisma.oAuthAccount.upsert({

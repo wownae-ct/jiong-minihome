@@ -87,4 +87,25 @@ describe('ProfileAvatar', () => {
 
     expect(div.className).toContain('custom-class')
   })
+
+  it('이미지 로드 실패 후 src가 변경되면 새 이미지를 시도해야 함', () => {
+    const { rerender } = render(
+      <ProfileAvatar src="https://old.url/pic.jpg" alt="User" />
+    )
+
+    // 이미지 로드 실패
+    const img = screen.getByRole('img', { name: 'User' })
+    fireEvent.error(img)
+
+    // 폴백 상태 확인
+    expect(screen.queryByRole('img')).not.toBeInTheDocument()
+    expect(screen.getByText('U')).toBeInTheDocument()
+
+    // src가 변경되면 hasError가 리셋되어 새 이미지를 시도해야 함
+    rerender(<ProfileAvatar src="https://new.url/pic.jpg" alt="User" />)
+
+    const newImg = screen.getByRole('img', { name: 'User' })
+    expect(newImg).toBeInTheDocument()
+    expect(newImg).toHaveAttribute('src', 'https://new.url/pic.jpg')
+  })
 })

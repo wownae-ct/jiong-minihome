@@ -451,7 +451,7 @@ describe('ProfileSettings', () => {
       })
     })
 
-    it('저장 성공 후 세션 update()를 await 해야 함', async () => {
+    it('저장 성공 후 세션 update({})를 호출하여 POST 요청으로 trigger를 전달해야 함', async () => {
       const user = userEvent.setup()
       mockInitialLoad()
 
@@ -470,7 +470,9 @@ describe('ProfileSettings', () => {
       await user.click(screen.getByText('저장'))
 
       await waitFor(() => {
-        expect(mockUpdate).toHaveBeenCalled()
+        // update()가 아닌 update({})로 호출되어야 POST 요청이 발생하고
+        // JWT 콜백에 trigger: "update"가 전달됨
+        expect(mockUpdate).toHaveBeenCalledWith({})
       })
     })
   })

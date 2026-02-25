@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 interface ProfileAvatarProps {
   src: string | null | undefined
@@ -23,6 +23,12 @@ const TEXT_SIZE_CLASSES = {
 
 export function ProfileAvatar({ src, alt, size = 'md', className = '' }: ProfileAvatarProps) {
   const [hasError, setHasError] = useState(false)
+
+  // src가 변경되면 에러 상태 리셋
+  useEffect(() => {
+    setHasError(false)
+  }, [src])
+
   const sizeClass = SIZE_CLASSES[size]
   const textSize = TEXT_SIZE_CLASSES[size]
 

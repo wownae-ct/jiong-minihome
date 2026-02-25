@@ -267,6 +267,56 @@ describe('handleJwtCallback', () => {
     })
   })
 
+  it('OAuth 기존 사용자 로그인 시 DB의 profileImage를 token.picture에 설정해야 함', async () => {
+    const existingUser = makeUser({
+      id: 5,
+      email: 'existing@test.com',
+      profileImage: 'https://s3.test/bucket/uploads/custom.jpg',
+    })
+
+    vi.mocked(prisma.user.findUnique).mockResolvedValue(existingUser)
+    vi.mocked(prisma.oAuthAccount.upsert).mockResolvedValue({} as never)
+    vi.mocked(prisma.user.update).mockResolvedValue({} as never)
+
+    const token = { email: 'existing@test.com', picture: 'https://google.com/oauth-pic.jpg' }
+    const user = { id: 'temp', image: 'https://google.com/oauth-pic.jpg' }
+    const account = { provider: 'google', providerAccountId: 'g1' }
+
+    const result = await handleJwtCallback({
+      token: token as never,
+      user: user as never,
+      account: account as never,
+    })
+
+    // OAuth 프로바이더 이미지가 아닌 DB에 저장된 커스텀 이미지를 사용해야 함
+    expect(result.picture).toBe('https://s3.test/bucket/uploads/custom.jpg')
+  })
+
+  it('OAuth 기존 사용자에 profileImage가 없으면 OAuth 프로바이더 이미지를 유지해야 함', async () => {
+    const existingUser = makeUser({
+      id: 5,
+      email: 'existing@test.com',
+      profileImage: null,
+    })
+
+    vi.mocked(prisma.user.findUnique).mockResolvedValue(existingUser)
+    vi.mocked(prisma.oAuthAccount.upsert).mockResolvedValue({} as never)
+    vi.mocked(prisma.user.update).mockResolvedValue({} as never)
+
+    const token = { email: 'existing@test.com', picture: 'https://google.com/oauth-pic.jpg' }
+    const user = { id: 'temp', image: 'https://google.com/oauth-pic.jpg' }
+    const account = { provider: 'google', providerAccountId: 'g1' }
+
+    const result = await handleJwtCallback({
+      token: token as never,
+      user: user as never,
+      account: account as never,
+    })
+
+    // DB에 profileImage가 없으면 OAuth 프로바이더 이미지 유지
+    expect(result.picture).toBe('https://google.com/oauth-pic.jpg')
+  })
+
   it('OAuth 기존 사용자 로그인 시 lastLoginAt을 업데이트해야 함', async () => {
     const existingUser = makeUser({ id: 5, email: 'existing@test.com' })
     vi.mocked(prisma.user.findUnique).mockResolvedValue(existingUser)
