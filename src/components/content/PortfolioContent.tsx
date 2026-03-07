@@ -146,7 +146,7 @@ export function PortfolioContent() {
 
   // 목록 보기 모드
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 md:p-8 border border-slate-200 dark:border-slate-700 relative">
+    <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 sm:p-6 md:p-8 border border-slate-200 dark:border-slate-700 relative">
       {/* 관리자 버튼 */}
       {isAdmin && (
         <div className="absolute top-4 right-4 flex gap-2">
@@ -164,7 +164,7 @@ export function PortfolioContent() {
         </div>
       )}
 
-      <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-2">
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-2">
         <span className="text-primary">포트폴리오</span>
         <span className="text-slate-400 dark:text-slate-500">Portfolio</span>
       </h2>

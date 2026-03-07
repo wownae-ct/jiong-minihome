@@ -9,6 +9,7 @@ import { Portfolio, useDeletePortfolio } from "@/hooks/usePortfolios";
 import { useToast } from "@/components/providers/ToastProvider";
 import { motion } from "framer-motion";
 import { parsePortfolioImages } from "@/lib/portfolio-images";
+import { highlightCodeBlocks } from "@/lib/highlight-code";
 
 interface PortfolioDetailProps {
     project: Portfolio;
@@ -113,10 +114,10 @@ export function PortfolioDetail({
             )}
 
             {/* 프로젝트 정보 */}
-            <div className="p-6 md:p-8">
+            <div className="p-4 sm:p-6 md:p-8">
                 {/* 제목 및 뱃지 */}
                 <div className="flex items-start justify-between gap-4 mb-4">
-                    <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100">
+                    <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100">
                         {project.title}
                     </h1>
                     {project.featured && (
@@ -128,7 +129,7 @@ export function PortfolioDetail({
 
                 {/* 간단 설명 */}
                 {project.description && (
-                    <p className="text-slate-600 dark:text-slate-300 text-lg leading-relaxed mb-6">
+                    <p className="text-slate-600 dark:text-slate-300 text-base sm:text-lg leading-relaxed mb-6">
                         {project.description}
                     </p>
                 )}
@@ -161,7 +162,7 @@ export function PortfolioDetail({
                         <div
                             className="prose prose-slate dark:prose-invert max-w-none overflow-hidden"
                             dangerouslySetInnerHTML={{
-                                __html: project.content,
+                                __html: highlightCodeBlocks(project.content),
                             }}
                         />
                     </div>
@@ -174,7 +175,7 @@ export function PortfolioDetail({
                             href={project.githubUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 px-6 py-3 bg-slate-900 dark:bg-slate-700 text-white rounded-xl hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors"
+                            className="inline-flex items-center gap-2 px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base bg-slate-900 dark:bg-slate-700 text-white rounded-xl hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors"
                         >
                             <Icon name="code" />
                             GitHub에서 보기
@@ -185,7 +186,7 @@ export function PortfolioDetail({
                             href={project.notionUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-xl hover:bg-blue-600 transition-colors"
+                            className="inline-flex items-center gap-2 px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base bg-primary text-white rounded-xl hover:bg-blue-600 transition-colors"
                         >
                             <Icon name="description" />
                             Notion에서 보기

@@ -25,7 +25,7 @@ export function Header() {
                 onClick={handleLogoClick}
                 className="flex items-center gap-3 bg-white dark:bg-slate-800 px-6 py-3 rounded-full shadow-sm border border-slate-200 dark:border-slate-700 hover:shadow-md transition-shadow cursor-pointer"
             >
-                <h1 className="text-2xl md:text-3xl font-display text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-display text-slate-800 dark:text-slate-100 flex items-center gap-2">
                     지옹이 미니홈피
                     <Icon name="home" className="text-primary text-4xl" size="xl" />
                 </h1>

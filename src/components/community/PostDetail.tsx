@@ -11,6 +11,7 @@ import { PasswordModal } from '@/components/common/PasswordModal'
 import { DeleteConfirmModal } from '@/components/common/DeleteConfirmModal'
 import { ProfileAvatar } from '@/components/common/ProfileAvatar'
 import { sanitizeHtml, isHtmlContent } from '@/lib/sanitize'
+import { highlightCodeBlocks } from '@/lib/highlight-code'
 
 interface PostDetailProps {
   post: {
@@ -136,7 +137,7 @@ export function PostDetail({ post, onBack, onEdit, onDelete, onMemberClick }: Po
     <>
       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
         {/* 헤더 */}
-        <div className="p-6 border-b border-slate-200 dark:border-slate-700">
+        <div className="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-700">
           <div className="flex items-center gap-2 mb-2">
             <Link
               href="/community"
@@ -155,7 +156,7 @@ export function PostDetail({ post, onBack, onEdit, onDelete, onMemberClick }: Po
               <Icon name="lock" size="sm" className="text-slate-400 ml-1" />
             )}
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
             {post.title}
           </h1>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -215,11 +216,11 @@ export function PostDetail({ post, onBack, onEdit, onDelete, onMemberClick }: Po
         </div>
 
         {/* 본문 */}
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {isHtmlContent(post.content) ? (
             <div
               className="prose dark:prose-invert max-w-none"
-              dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.content) }}
+              dangerouslySetInnerHTML={{ __html: highlightCodeBlocks(sanitizeHtml(post.content)) }}
             />
           ) : (
             <div className="prose dark:prose-invert max-w-none whitespace-pre-wrap">
@@ -229,7 +230,7 @@ export function PostDetail({ post, onBack, onEdit, onDelete, onMemberClick }: Po
         </div>
 
         {/* 하단 액션 */}
-        <div className="p-6 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
+        <div className="p-4 sm:p-6 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
           {onBack ? (
             <button
               onClick={onBack}
