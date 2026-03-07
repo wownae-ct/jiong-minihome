@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Portfolio, useDeletePortfolio } from "@/hooks/usePortfolios";
 import { useToast } from "@/components/providers/ToastProvider";
 import { motion } from "framer-motion";
+import { parsePortfolioImages } from "@/lib/portfolio-images";
 
 interface PortfolioDetailProps {
     project: Portfolio;
@@ -27,6 +28,7 @@ export function PortfolioDetail({
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const deleteMutation = useDeletePortfolio();
     const toast = useToast();
+    const images = parsePortfolioImages(project.image);
 
     const handleDelete = async () => {
         try {
@@ -85,15 +87,21 @@ export function PortfolioDetail({
             </div>
 
             {/* 프로젝트 이미지 */}
-            <div className="aspect-video bg-gradient-to-br from-primary/20 to-blue-600/20 flex items-center justify-center">
-                {project.image ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                        src={project.image}
-                        alt={project.title}
-                        className="w-full h-full object-cover"
-                    />
-                ) : (
+            {images.length > 0 ? (
+                <div className={`grid ${images.length === 2 ? 'grid-cols-2' : 'grid-cols-1'} gap-0`}>
+                    {images.map((img, idx) => (
+                        <div key={idx} className="aspect-video bg-gradient-to-br from-primary/20 to-blue-600/20 overflow-hidden">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                                src={img}
+                                alt={`${project.title} ${idx + 1}`}
+                                className="w-full h-full object-cover"
+                            />
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <div className="aspect-video bg-gradient-to-br from-primary/20 to-blue-600/20 flex items-center justify-center overflow-hidden">
                     <div className="text-center">
                         <Icon
                             name="folder_open"
@@ -101,8 +109,8 @@ export function PortfolioDetail({
                         />
                         <p className="text-slate-400 mt-2">프로젝트 이미지</p>
                     </div>
-                )}
-            </div>
+                </div>
+            )}
 
             {/* 프로젝트 정보 */}
             <div className="p-6 md:p-8">
@@ -151,7 +159,7 @@ export function PortfolioDetail({
                             상세 내용
                         </h3>
                         <div
-                            className="prose prose-slate dark:prose-invert max-w-none"
+                            className="prose prose-slate dark:prose-invert max-w-none overflow-hidden"
                             dangerouslySetInnerHTML={{
                                 __html: project.content,
                             }}

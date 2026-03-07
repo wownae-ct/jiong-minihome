@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { portfolioCreateSchema } from '@/lib/validations/portfolio'
 import { requireAdmin, upsertPortfolioTags } from '@/lib/api/helpers'
+import { serializePortfolioImages } from '@/lib/portfolio-images'
 
 // GET: 포트폴리오 목록 조회
 export async function GET() {
@@ -56,7 +57,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { tags, ...portfolioData } = validation.data
+    const { tags, image, ...portfolioData } = validation.data
+
+    // 이미지 배열을 직렬화
+    const serializedImage = Array.isArray(image)
+      ? serializePortfolioImages(image)
+      : image ?? null
 
     // 트랜잭션으로 포트폴리오와 태그 생성
     const portfolio = await prisma.$transaction(async (tx) => {
@@ -64,6 +70,7 @@ export async function POST(request: NextRequest) {
       const newPortfolio = await tx.portfolio.create({
         data: {
           ...portfolioData,
+          image: serializedImage,
           githubUrl: portfolioData.githubUrl || null,
           notionUrl: portfolioData.notionUrl || null,
           userId: Number(session.user.id),

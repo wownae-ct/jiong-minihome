@@ -13,6 +13,7 @@ import { useTab } from '@/components/providers/TabContext'
 import { AnimatePresence, motion } from 'framer-motion'
 import { SearchFilter } from '@/components/common/SearchFilter'
 import { Pagination } from '@/components/ui/Pagination'
+import { getFirstImage } from '@/lib/portfolio-images'
 
 const PORTFOLIO_PAGE_SIZE = 4
 
@@ -245,10 +246,10 @@ export function PortfolioContent() {
                 className="group bg-slate-50 dark:bg-slate-700/50 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-600 hover:border-primary hover:shadow-lg transition-all cursor-pointer"
               >
                 <div className="aspect-video bg-gradient-to-br from-primary/20 to-blue-600/20 flex items-center justify-center relative overflow-hidden">
-                  {project.image ? (
+                  {getFirstImage(project.image) ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={project.image}
+                      src={getFirstImage(project.image)!}
                       alt={project.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />

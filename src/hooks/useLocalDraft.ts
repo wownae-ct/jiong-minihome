@@ -6,7 +6,7 @@ export interface DraftData {
   title?: string
   content?: string
   description?: string
-  image?: string | null
+  image?: string | string[] | null
   githubUrl?: string
   notionUrl?: string
   featured?: boolean

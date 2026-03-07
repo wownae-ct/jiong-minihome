@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { portfolioUpdateSchema } from '@/lib/validations/portfolio'
 import { requireAdmin, parseId, upsertPortfolioTags } from '@/lib/api/helpers'
+import { serializePortfolioImages } from '@/lib/portfolio-images'
 
 interface Params {
   params: Promise<{ id: string }>
@@ -73,7 +74,12 @@ export async function PUT(request: NextRequest, { params }: Params) {
       )
     }
 
-    const { tags, ...portfolioData } = validation.data
+    const { tags, image, ...portfolioData } = validation.data
+
+    // 이미지 배열을 직렬화
+    const serializedImage = image !== undefined
+      ? (Array.isArray(image) ? serializePortfolioImages(image) : image ?? null)
+      : undefined
 
     // 기존 포트폴리오 확인
     const existingPortfolio = await prisma.portfolio.findUnique({
@@ -94,6 +100,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
         where: { id: portfolioId },
         data: {
           ...portfolioData,
+          ...(serializedImage !== undefined && { image: serializedImage }),
           githubUrl: portfolioData.githubUrl || null,
           notionUrl: portfolioData.notionUrl || null,
         },

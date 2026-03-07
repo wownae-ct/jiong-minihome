@@ -15,6 +15,7 @@ import { useCreatePortfolio, useUpdatePortfolio, useTags, usePortfolioDetail, Po
 import { useLocalDraft, DraftData } from '@/hooks/useLocalDraft'
 import { portfolioCreateSchema, PortfolioCreateInput } from '@/lib/validations/portfolio'
 import { useToast } from '@/components/providers/ToastProvider'
+import { parsePortfolioImages } from '@/lib/portfolio-images'
 
 interface PortfolioWriteModalProps {
   isOpen: boolean
@@ -33,7 +34,7 @@ export function PortfolioWriteModal({
   const { data: allTags } = useTags()
   const createMutation = useCreatePortfolio()
   const updateMutation = useUpdatePortfolio()
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [previewUrls, setPreviewUrls] = useState<string[]>([])
   const [isUploading, setIsUploading] = useState(false)
   const [showDraftRestore, setShowDraftRestore] = useState(false)
   const [draftChecked, setDraftChecked] = useState(false)
@@ -64,7 +65,7 @@ export function PortfolioWriteModal({
       title: '',
       content: '',
       description: '',
-      image: null,
+      image: [],
       githubUrl: '',
       notionUrl: '',
       featured: false,
@@ -102,17 +103,18 @@ export function PortfolioWriteModal({
   }, [isOpen, isEditMode, fetchedPortfolio, hasDraft, draft, draftChecked])
 
   const resetToOriginal = (data: Portfolio) => {
+    const images = parsePortfolioImages(data.image)
     reset({
       title: data.title || '',
       content: data.content || '',
       description: data.description || '',
-      image: data.image || null,
+      image: images,
       githubUrl: data.githubUrl || '',
       notionUrl: data.notionUrl || '',
       featured: data.featured || false,
       tags: data.tags || [],
     })
-    setPreviewUrl(data.image || null)
+    setPreviewUrls(images)
   }
 
   const resetToEmpty = () => {
@@ -120,30 +122,31 @@ export function PortfolioWriteModal({
       title: '',
       content: '',
       description: '',
-      image: null,
+      image: [],
       githubUrl: '',
       notionUrl: '',
       featured: false,
       tags: [],
     })
-    setPreviewUrl(null)
+    setPreviewUrls([])
   }
 
   // 임시 저장 데이터 복원
   const handleRestoreDraft = () => {
     if (draft?.data) {
       const data = draft.data as DraftData
+      const images = Array.isArray(data.image) ? data.image : parsePortfolioImages(data.image)
       reset({
         title: data.title || '',
         content: data.content || '',
         description: data.description || '',
-        image: data.image || null,
+        image: images,
         githubUrl: data.githubUrl || '',
         notionUrl: data.notionUrl || '',
         featured: data.featured || false,
         tags: data.tags || [],
       })
-      setPreviewUrl(data.image || null)
+      setPreviewUrls(images)
     }
     setShowDraftRestore(false)
   }
@@ -170,7 +173,7 @@ export function PortfolioWriteModal({
 
   const handleClose = () => {
     reset()
-    setPreviewUrl(null)
+    setPreviewUrls([])
     setDraftChecked(false)
     setShowDraftRestore(false)
     onClose()
@@ -238,9 +241,12 @@ export function PortfolioWriteModal({
     toast.toast(error.message || '파일 업로드에 실패했습니다.', 'error')
   }, [toast])
 
-  const handleRemoveImage = () => {
-    setValue('image', null)
-    setPreviewUrl(null)
+  const handleRemoveImage = (index: number) => {
+    const current = watch('image')
+    const images = Array.isArray(current) ? [...current] : []
+    images.splice(index, 1)
+    setValue('image', images)
+    setPreviewUrls(images)
   }
 
   const onSubmit = async (data: PortfolioCreateInput) => {
@@ -295,27 +301,34 @@ export function PortfolioWriteModal({
           {...register('description')}
         />
 
-        {/* 대표 이미지 */}
+        {/* 대표 이미지 (최대 2개) */}
         <div>
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-            대표 이미지
+            대표 이미지 <span className="text-slate-400 font-normal">(최대 2개)</span>
           </label>
-          <ImageDropZone
-            previewUrl={previewUrl}
-            onImageSelect={async (file) => {
-              try {
-                const url = await handleImageUpload(file)
-                setValue('image', url)
-                setPreviewUrl(url)
-                toast.toast('이미지가 업로드되었습니다.', 'success')
-              } catch {
-                toast.toast('이미지 업로드에 실패했습니다.', 'error')
-              }
-            }}
-            onRemove={handleRemoveImage}
-            isUploading={isUploading}
-            className="max-w-md"
-          />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[0, 1].map((index) => (
+              <ImageDropZone
+                key={index}
+                previewUrl={previewUrls[index] || null}
+                onImageSelect={async (file) => {
+                  try {
+                    const url = await handleImageUpload(file)
+                    const current = watch('image')
+                    const images = Array.isArray(current) ? [...current] : []
+                    images[index] = url
+                    setValue('image', images.filter(Boolean))
+                    setPreviewUrls(images.filter(Boolean))
+                    toast.toast('이미지가 업로드되었습니다.', 'success')
+                  } catch {
+                    toast.toast('이미지 업로드에 실패했습니다.', 'error')
+                  }
+                }}
+                onRemove={() => handleRemoveImage(index)}
+                isUploading={isUploading}
+              />
+            ))}
+          </div>
         </div>
 
         {/* 본문 (리치 텍스트 에디터) */}
