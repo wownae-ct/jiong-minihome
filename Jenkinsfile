@@ -81,6 +81,35 @@ spec:
                 }
             }
         }
+	
+	stage('Update ECR Secret') {
+ 	   steps {
+        	container('aws-cli') {
+	            withCredentials([[
+        	        $class: 'AmazonWebServicesCredentialsBinding',
+                	credentialsId: 'aws-ecr-credentials',
+	                accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+        	        secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+	            ]]) {
+	                sh """
+	                    # kubectl 설치
+        	            curl -LO "https://dl.k8s.io/release/\$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+                	    chmod +x kubectl && mv kubectl /usr/local/bin/
+
+	                    ECR_PASSWORD=\$(aws ecr get-login-password --region ${REGION})
+
+        	            # portfolio-web 네임스페이스 ECR credentials 갱신
+                	    kubectl create secret docker-registry ecr-credentials \
+	                      --namespace=portfolio-web \
+        	              --docker-server=${ECR_REGISTRY} \
+                	      --docker-username=AWS \
+	                      --docker-password=\${ECR_PASSWORD} \
+        	              --dry-run=client -o yaml | kubectl apply -f -
+        	        """
+        	    }
+        	}
+    	    }
+	}
 
         stage('Build & Push (kaniko)') {
             steps {
