@@ -36,7 +36,7 @@ spec:
     options {
         disableConcurrentBuilds(abortPrevious: true)
         buildDiscarder(logRotator(numToKeepStr: '10', daysToKeepStr: '30'))
-        timeout(time: 15, unit: 'MINUTES')
+        timeout(time: 30, unit: 'MINUTES')
     }
 
     environment {
@@ -68,6 +68,14 @@ spec:
                             ECR_PASSWORD=\$(aws ecr get-login-password --region ${REGION})
                             mkdir -p /root/.docker
                             echo '{"auths":{"${ECR_REGISTRY}":{"auth":"'"\$(echo -n AWS:\${ECR_PASSWORD} | base64 -w 0)"'"}}}' > /root/.docker/config.json
+
+                            # ECR cache 레포 없으면 자동 생성
+                            aws ecr describe-repositories \
+                              --repository-names ${ECR_REPO}/cache \
+                              --region ${REGION} 2>/dev/null || \
+                            aws ecr create-repository \
+                              --repository-name ${ECR_REPO}/cache \
+                              --region ${REGION}
                         """
                     }
                 }
@@ -83,7 +91,8 @@ spec:
                           --dockerfile=${WORKSPACE}/Dockerfile \
                           --destination=${ECR_REGISTRY}/${ECR_REPO}:${IMAGE_TAG} \
                           --destination=${ECR_REGISTRY}/${ECR_REPO}:latest \
-                          --cache=true
+                          --cache=true \
+                          --cache-repo=${ECR_REGISTRY}/${ECR_REPO}/cache
                     """
                 }
             }
@@ -128,6 +137,9 @@ spec:
             echo "❌ Build failed."
         }
         always {
+            container('git') {
+                sh 'chmod -R 777 ${WORKSPACE}/infra-repo || true'
+            }
             deleteDir()
         }
     }
