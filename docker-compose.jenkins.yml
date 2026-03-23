@@ -7,9 +7,19 @@ services:
       - "8080:8080"
     volumes:
       - /mnt/jenkins_data:/var/jenkins_home
+      
+      - /mnt/docker_data/workspace:/var/jenkins_home/workspace
+      
       - /var/run/docker.sock:/var/run/docker.sock
+
       - /usr/bin/docker:/usr/bin/docker
       - /usr/libexec/docker/cli-plugins:/usr/libexec/docker/cli-plugins:ro
       - /home/ju_admin/deploy/portfolio-web:/opt/env:ro
     environment:
       - JAVA_OPTS=-Dorg.jenkinsci.plugins.durabletask.BourneShellScript.HEARTBEAT_CHECK_INTERVAL=86400
+      - JENKINS_OPTS=--prefix=/jks
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
