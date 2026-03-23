@@ -67,6 +67,11 @@ spec:
                         secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
                     ]]) {
                         sh """
+                            # kubectl 설치
+                            curl -LO "https://dl.k8s.io/release/\$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+                            chmod +x kubectl
+                            mv kubectl /usr/local/bin/
+
                             ECR_PASSWORD=\$(aws ecr get-login-password --region ${REGION})
 
                             kubectl create secret docker-registry ecr-credentials \
@@ -135,7 +140,7 @@ spec:
             echo "❌ Build failed."
         }
         always {
-            cleanWs()
+            deleteDir()
         }
     }
 }
