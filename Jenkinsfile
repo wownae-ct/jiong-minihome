@@ -12,25 +12,23 @@ spec:
     image: amazon/aws-cli:latest
     command: [sleep]
     args: ["9999999"]
+    volumeMounts:
+    - name: docker-config
+      mountPath: /root/.docker
   - name: kaniko
     image: gcr.io/kaniko-project/executor:debug
     command: [sleep]
     args: ["9999999"]
     volumeMounts:
-    - name: kaniko-secret
+    - name: docker-config
       mountPath: /kaniko/.docker
   - name: git
     image: alpine/git:latest
     command: [sleep]
     args: ["9999999"]
   volumes:
-  - name: kaniko-secret
-    secret:
-      secretName: ecr-credentials
-      optional: true
-      items:
-      - key: .dockerconfigjson
-        path: config.json
+  - name: docker-config
+    emptyDir: {}
 """
         }
     }
@@ -67,19 +65,9 @@ spec:
                         secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
                     ]]) {
                         sh """
-                            # kubectl 설치
-                            curl -LO "https://dl.k8s.io/release/\$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-                            chmod +x kubectl
-                            mv kubectl /usr/local/bin/
-
                             ECR_PASSWORD=\$(aws ecr get-login-password --region ${REGION})
-
-                            kubectl create secret docker-registry ecr-credentials \
-                              --namespace=jenkins \
-                              --docker-server=${ECR_REGISTRY} \
-                              --docker-username=AWS \
-                              --docker-password=\${ECR_PASSWORD} \
-                              --dry-run=client -o yaml | kubectl apply -f -
+                            mkdir -p /root/.docker
+                            echo '{"auths":{"${ECR_REGISTRY}":{"auth":"'"\$(echo -n AWS:\${ECR_PASSWORD} | base64 -w 0)"'"}}}' > /root/.docker/config.json
                         """
                     }
                 }
