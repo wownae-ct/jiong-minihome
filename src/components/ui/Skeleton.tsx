@@ -52,17 +52,6 @@ export function Skeleton({
   )
 }
 
-// 프리셋 컴포넌트
-export function SkeletonCard() {
-  return (
-    <div className="p-4 border border-slate-200 dark:border-slate-700 rounded-xl space-y-3">
-      <Skeleton variant="rectangular" height={120} />
-      <Skeleton variant="text" width="60%" height={20} />
-      <Skeleton variant="text" lines={2} />
-    </div>
-  )
-}
-
 export function SkeletonAvatar({ size = 40 }: { size?: number }) {
   return <Skeleton variant="circular" width={size} height={size} />
 }

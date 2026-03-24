@@ -7,10 +7,8 @@ const optionalEmail = z.union([
 
 const optionalUrl = z.union([z.string().url('유효한 URL을 입력해주세요'), z.literal('')])
 
-// 이미지 URL은 상대 경로(/uploads/...)와 절대 URL 모두 허용
 const optionalImageUrl = z.union([
   z.string().url('유효한 URL을 입력해주세요'),
-  z.string().startsWith('/uploads/', '이미지는 업로드된 파일이어야 합니다'),
   z.literal(''),
 ])
 
