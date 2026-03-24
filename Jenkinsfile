@@ -40,12 +40,14 @@ spec:
     }
 
     environment {
-        APP_NAME     = 'portfolio-web'
-        ECR_REGISTRY = credentials('ecr-registry')
-        ECR_REPO     = 'portfolio-web'
-        REGION       = 'ap-northeast-2'
-        INFRA_REPO   = 'git@github.com:wownae-ct/infra-repo.git'
-        IMAGE_TAG    = "${BUILD_NUMBER}"
+        APP_NAME             = 'portfolio-web'
+        ECR_REGISTRY         = credentials('ecr-registry')
+        ECR_REPO             = 'portfolio-web'
+        REGION               = 'ap-northeast-2'
+        INFRA_REPO           = 'git@github.com:wownae-ct/infra-repo.git'
+        IMAGE_TAG            = "${BUILD_NUMBER}"
+        MINIO_IMAGE_HOSTNAME = 'jiun2.ddns.net'
+        MINIO_PUBLIC_URL     = 'http://jiun2.ddns.net/s3'
     }
 
     stages {
@@ -120,6 +122,8 @@ spec:
                           --dockerfile=${WORKSPACE}/Dockerfile \
                           --destination=${ECR_REGISTRY}/${ECR_REPO}:${IMAGE_TAG} \
                           --destination=${ECR_REGISTRY}/${ECR_REPO}:latest \
+                          --build-arg MINIO_IMAGE_HOSTNAME=${MINIO_IMAGE_HOSTNAME} \
+                          --build-arg MINIO_PUBLIC_URL=${MINIO_PUBLIC_URL} \
                           --cache=true \
                           --cache-repo=${ECR_REGISTRY}/${ECR_REPO}/cache
                     """
