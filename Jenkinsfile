@@ -235,7 +235,7 @@ spec:
                 }
             }
         }
-        always {
+        cleanup {
             container('git') {
                 sh """
                     chmod -R 777 ${WORKSPACE}/infra-repo || true
