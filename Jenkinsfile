@@ -26,6 +26,10 @@ spec:
     image: alpine/git:latest
     command: [sleep]
     args: ["9999999"]
+  - name: kubectl
+    image: bitnami/kubectl:latest
+    command: [sleep]
+    args: ["9999999"]
   volumes:
   - name: docker-config
     emptyDir: {}
@@ -84,34 +88,32 @@ spec:
             }
         }
 	
-	stage('Update ECR Secret') {
- 	   steps {
-        	container('aws-cli') {
-	            withCredentials([[
-        	        $class: 'AmazonWebServicesCredentialsBinding',
-                	credentialsId: 'aws-ecr-credentials',
-	                accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-        	        secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
-	            ]]) {
-	                sh """
-	                    # kubectl 설치
-        	            curl -LO "https://dl.k8s.io/release/\$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-                	    chmod +x kubectl && mv kubectl /usr/local/bin/
-
-	                    ECR_PASSWORD=\$(aws ecr get-login-password --region ${REGION})
-
-        	            # portfolio-web 네임스페이스 ECR credentials 갱신
-                	    kubectl create secret docker-registry ecr-credentials \
-	                      --namespace=portfolio-web \
-        	              --docker-server=${ECR_REGISTRY} \
-                	      --docker-username=AWS \
-	                      --docker-password=\${ECR_PASSWORD} \
-        	              --dry-run=client -o yaml | kubectl apply -f -
-        	        """
-        	    }
-        	}
-    	    }
-	}
+        stage('Update ECR Secret') {
+            steps {
+                container('aws-cli') {
+                    withCredentials([[
+                        $class: 'AmazonWebServicesCredentialsBinding',
+                        credentialsId: 'aws-ecr-credentials',
+                        accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                        secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                    ]]) {
+                        sh """
+                            aws ecr get-login-password --region ${REGION} > /tmp/ecr-password
+                        """
+                    }
+                }
+                container('kubectl') {
+                    sh """
+                        kubectl create secret docker-registry ecr-credentials \
+                          --namespace=portfolio-web \
+                          --docker-server=${ECR_REGISTRY} \
+                          --docker-username=AWS \
+                          --docker-password=\$(cat /tmp/ecr-password) \
+                          --dry-run=client -o yaml | kubectl apply -f -
+                    """
+                }
+            }
+        }
 
         stage('Build & Push (kaniko)') {
             steps {
@@ -158,20 +160,87 @@ spec:
                         """
                     }
                 }
+                sh "touch ${WORKSPACE}/.infra-updated"
+            }
+        }
+
+        stage('Health Check') {
+            steps {
+                container('kubectl') {
+                    sh """
+                        echo "Waiting for ArgoCD to sync new image tag..."
+                        TIMEOUT=180
+                        ELAPSED=0
+                        while [ \$ELAPSED -lt \$TIMEOUT ]; do
+                            CURRENT_IMAGE=\$(kubectl get deployment portfolio-web -n portfolio-web -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || echo "")
+                            CURRENT_TAG=\$(echo "\$CURRENT_IMAGE" | grep -o '[^:]*\$' || echo "")
+                            if [ "\$CURRENT_TAG" = "${IMAGE_TAG}" ]; then
+                                echo "New image tag detected: \$CURRENT_TAG"
+                                break
+                            fi
+                            echo "Waiting... (current: \$CURRENT_TAG, expected: ${IMAGE_TAG}, \${ELAPSED}s/\${TIMEOUT}s)"
+                            sleep 10
+                            ELAPSED=\$((ELAPSED + 10))
+                        done
+
+                        if [ "\$CURRENT_TAG" != "${IMAGE_TAG}" ]; then
+                            echo "ERROR: ArgoCD sync timeout. Image tag not updated within \${TIMEOUT}s"
+                            echo "Current image: \$CURRENT_IMAGE"
+                            echo "Expected tag: ${IMAGE_TAG}"
+                            echo "Check: kubectl get deployment portfolio-web -n portfolio-web -o jsonpath='{.spec.template.spec.containers[0].image}'"
+                            echo "Check: argocd app get portfolio-web"
+                            exit 1
+                        fi
+
+                        echo "Checking rollout status..."
+                        kubectl rollout status deployment/portfolio-web -n portfolio-web --timeout=120s
+                    """
+                }
             }
         }
     }
 
     post {
         success {
-            echo "✅ Build ${IMAGE_TAG} pushed to ECR and infra-repo updated."
+            echo "✅ Build ${IMAGE_TAG} deployed and health check passed."
         }
         failure {
-            echo "❌ Build failed."
+            script {
+                if (fileExists('.infra-updated')) {
+                    echo "❌ Health check failed. Rolling back infra-repo..."
+                    container('git') {
+                        withCredentials([sshUserPrivateKey(
+                            credentialsId: 'github-infra-ssh',
+                            keyFileVariable: 'SSH_KEY'
+                        )]) {
+                            sh """
+                                mkdir -p ~/.ssh
+                                cp \${SSH_KEY} ~/.ssh/id_rsa
+                                chmod 600 ~/.ssh/id_rsa
+                                ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
+
+                                rm -rf infra-repo-rollback
+                                git clone ${INFRA_REPO} infra-repo-rollback
+                                cd infra-repo-rollback
+                                git config user.email "jenkins@k8s.local"
+                                git config user.name "Jenkins"
+                                git revert HEAD --no-edit
+                                git push origin master
+                            """
+                        }
+                    }
+                    echo "✅ Rollback commit pushed. ArgoCD will sync to previous version."
+                } else {
+                    echo "❌ Build failed (before infra-repo update). No rollback needed."
+                }
+            }
         }
         always {
             container('git') {
-                sh 'chmod -R 777 ${WORKSPACE}/infra-repo || true'
+                sh """
+                    chmod -R 777 ${WORKSPACE}/infra-repo || true
+                    chmod -R 777 ${WORKSPACE}/infra-repo-rollback || true
+                """
             }
             deleteDir()
         }
