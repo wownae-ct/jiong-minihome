@@ -27,10 +27,9 @@ spec:
     command: [sleep]
     args: ["9999999"]
   - name: kubectl
-    image: bitnami/kubectl:latest
+    image: dtzar/helm-kubectl:latest
     command: [sleep]
     args: ["9999999"]
-    tty: true
   volumes:
   - name: docker-config
     emptyDir: {}
