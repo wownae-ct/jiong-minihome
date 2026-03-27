@@ -150,7 +150,7 @@ spec:
                             cd infra-repo
 
                             sed -i 's|repository:.*|repository: ${ECR_REGISTRY}/${ECR_REPO}|' apps/portfolio-web/values.yaml
-                            sed -i 's|tag:.*|tag: "${IMAGE_TAG}"|' apps/portfolio-web/values.yaml
+                            sed -i 's|tag:.*|tag: "does-not-exist"|' apps/portfolio-web/values.yaml
 
                             git config user.email "jenkins@k8s.local"
                             git config user.name "Jenkins"
