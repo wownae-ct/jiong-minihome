@@ -30,6 +30,7 @@ spec:
     image: bitnami/kubectl:latest
     command: [sleep]
     args: ["9999999"]
+    tty: true
   volumes:
   - name: docker-config
     emptyDir: {}
@@ -98,7 +99,7 @@ spec:
                         secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
                     ]]) {
                         sh """
-                            aws ecr get-login-password --region ${REGION} > /tmp/ecr-password
+                            aws ecr get-login-password --region ${REGION} > ${WORKSPACE}/.ecr-password
                         """
                     }
                 }
@@ -108,7 +109,7 @@ spec:
                           --namespace=portfolio-web \
                           --docker-server=${ECR_REGISTRY} \
                           --docker-username=AWS \
-                          --docker-password=\$(cat /tmp/ecr-password) \
+                          --docker-password=\$(cat ${WORKSPACE}/.ecr-password) \
                           --dry-run=client -o yaml | kubectl apply -f -
                     """
                 }
