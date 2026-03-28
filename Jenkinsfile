@@ -169,7 +169,7 @@ spec:
                 container('kubectl') {
                     sh """
                         echo "Waiting for ArgoCD to sync new image tag..."
-                        TIMEOUT=180
+                        TIMEOUT=240
                         ELAPSED=0
                         while [ \$ELAPSED -lt \$TIMEOUT ]; do
                             CURRENT_IMAGE=\$(kubectl get deployment portfolio-web -n portfolio-web -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || echo "")
