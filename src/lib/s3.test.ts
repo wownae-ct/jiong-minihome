@@ -139,6 +139,30 @@ describe('S3 유틸리티', () => {
 
       expect(extractKeyFromUrl('')).toBeNull()
     })
+
+    it('레거시 path-based URL(http://jiun2.ddns.net/s3/)에서 key를 추출해야 한다', async () => {
+      const { extractKeyFromUrl } = await import('./s3')
+
+      const key = extractKeyFromUrl('http://jiun2.ddns.net/s3/portfolio-web/uploads/test-uuid.jpg')
+
+      expect(key).toBe('uploads/test-uuid.jpg')
+    })
+
+    it('레거시 https path-based URL에서도 key를 추출해야 한다', async () => {
+      const { extractKeyFromUrl } = await import('./s3')
+
+      const key = extractKeyFromUrl('https://jiun2.ddns.net/s3/portfolio-web/uploads/test-uuid.jpg')
+
+      expect(key).toBe('uploads/test-uuid.jpg')
+    })
+
+    it('레거시 bgm URL에서 key를 추출해야 한다', async () => {
+      const { extractKeyFromUrl } = await import('./s3')
+
+      const key = extractKeyFromUrl('http://jiun2.ddns.net/s3/portfolio-web/bgm/test-uuid.mp3')
+
+      expect(key).toBe('bgm/test-uuid.mp3')
+    })
   })
 
   describe('createPresignedUploadUrl', () => {

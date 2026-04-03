@@ -50,8 +50,8 @@ spec:
         REGION               = 'ap-northeast-2'
         INFRA_REPO           = 'git@github.com:wownae-ct/infra-repo.git'
         IMAGE_TAG            = "${BUILD_NUMBER}"
-        MINIO_IMAGE_HOSTNAME = 'jiun2.ddns.net'
-        MINIO_PUBLIC_URL     = 'http://jiun2.ddns.net/s3'
+        MINIO_IMAGE_HOSTNAME = 's3.jiun2.ddns.net'
+        MINIO_PUBLIC_URL     = 'https://s3.jiun2.ddns.net'
     }
 
     stages {
