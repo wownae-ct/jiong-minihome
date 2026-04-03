@@ -75,16 +75,5 @@ export function extractKeyFromUrl(url: string): string | null {
     return url.slice(prefix.length)
   }
 
-  // 레거시 path-based URL 하위호환 (DB 마이그레이션 완료 후 제거)
-  const legacyPrefixes = [
-    `http://jiun2.ddns.net/s3/${BUCKET}/`,
-    `https://jiun2.ddns.net/s3/${BUCKET}/`,
-  ]
-  for (const legacyPrefix of legacyPrefixes) {
-    if (url.startsWith(legacyPrefix)) {
-      return url.slice(legacyPrefix.length)
-    }
-  }
-
   return null
 }
