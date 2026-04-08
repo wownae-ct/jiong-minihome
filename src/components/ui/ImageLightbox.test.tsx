@@ -63,10 +63,38 @@ describe('ImageLightbox', () => {
   })
 
   it('isOpen=false로 변경되면 body overflow가 복원된다', () => {
+    document.body.style.overflow = 'auto'
     const { rerender } = render(<ImageLightbox {...defaultProps} />)
     expect(document.body.style.overflow).toBe('hidden')
 
     rerender(<ImageLightbox {...defaultProps} isOpen={false} />)
-    expect(document.body.style.overflow).toBe('unset')
+    expect(document.body.style.overflow).toBe('auto')
+  })
+
+  it('열기 → 닫기 → 다시 열기가 정상 동작한다', () => {
+    const onClose = vi.fn()
+    const { rerender } = render(
+      <ImageLightbox isOpen={true} onClose={onClose} src="https://example.com/1.jpg" alt="img1" />
+    )
+    expect(screen.getByRole('img')).toBeInTheDocument()
+
+    rerender(
+      <ImageLightbox isOpen={false} onClose={onClose} src="" alt="" />
+    )
+    expect(screen.queryByRole('img')).not.toBeInTheDocument()
+
+    rerender(
+      <ImageLightbox isOpen={true} onClose={onClose} src="https://example.com/2.jpg" alt="img2" />
+    )
+    expect(screen.getByRole('img')).toBeInTheDocument()
+    expect(screen.getByAltText('img2')).toBeInTheDocument()
+  })
+
+  it('backdrop 더블클릭 시 onClose가 한 번만 호출된다', () => {
+    render(<ImageLightbox {...defaultProps} />)
+    const backdrop = screen.getByTestId('lightbox-backdrop')
+    fireEvent.click(backdrop)
+    fireEvent.click(backdrop)
+    expect(defaultProps.onClose).toHaveBeenCalledTimes(1)
   })
 })

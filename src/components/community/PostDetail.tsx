@@ -56,10 +56,17 @@ export function PostDetail({ post, onBack, onEdit, onDelete, onMemberClick }: Po
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null)
   const [lightboxAlt, setLightboxAlt] = useState('')
   const proseRef = useRef<HTMLDivElement>(null)
+  const closedAtRef = useRef(0)
 
   const openLightbox = useCallback((src: string, alt: string) => {
+    if (Date.now() - closedAtRef.current < 300) return
     setLightboxSrc(src)
     setLightboxAlt(alt)
+  }, [])
+
+  const closeLightbox = useCallback(() => {
+    closedAtRef.current = Date.now()
+    setLightboxSrc(null)
   }, [])
 
   useEffect(() => {
@@ -323,7 +330,7 @@ export function PostDetail({ post, onBack, onEdit, onDelete, onMemberClick }: Po
 
       <ImageLightbox
         isOpen={!!lightboxSrc}
-        onClose={() => setLightboxSrc(null)}
+        onClose={closeLightbox}
         src={lightboxSrc || ''}
         alt={lightboxAlt}
       />

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useCallback } from 'react'
+import { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 
 interface ImageLightboxProps {
@@ -11,41 +11,63 @@ interface ImageLightboxProps {
 }
 
 export function ImageLightbox({ isOpen, onClose, src, alt = '' }: ImageLightboxProps) {
-  const handleEscape = useCallback(
-    (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose()
-      }
-    },
-    [onClose]
-  )
+  const onCloseRef = useRef(onClose)
+  const savedOverflowRef = useRef('')
+  const closingRef = useRef(false)
+
+  onCloseRef.current = onClose
 
   useEffect(() => {
-    if (isOpen) {
-      document.addEventListener('keydown', handleEscape)
-      document.body.style.overflow = 'hidden'
+    if (!isOpen) return
+
+    closingRef.current = false
+    savedOverflowRef.current = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onCloseRef.current()
+      }
     }
 
+    document.addEventListener('keydown', handleKeyDown)
+
     return () => {
-      document.removeEventListener('keydown', handleEscape)
-      document.body.style.overflow = 'unset'
+      document.removeEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = savedOverflowRef.current
     }
-  }, [isOpen, handleEscape])
+  }, [isOpen])
 
   if (!isOpen) return null
 
+  const handleClose = () => {
+    if (closingRef.current) return
+    closingRef.current = true
+    onCloseRef.current()
+  }
+
+  const handleBackdropPointerUp = (e: React.PointerEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    handleClose()
+  }
+
   const lightboxContent = (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center"
+      onPointerDown={(e) => e.stopPropagation()}
+    >
       {/* Backdrop */}
       <div
         data-testid="lightbox-backdrop"
         className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-        onClick={onClose}
+        onClick={handleClose}
+        onPointerUp={handleBackdropPointerUp}
       />
 
       {/* Close button */}
       <button
-        onClick={onClose}
+        onClick={handleClose}
         aria-label="닫기"
         className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/40 hover:bg-black/60 text-white transition-colors"
       >
@@ -61,6 +83,7 @@ export function ImageLightbox({ isOpen, onClose, src, alt = '' }: ImageLightboxP
         alt={alt}
         className="relative max-w-[90vw] max-h-[90vh] object-contain rounded-lg shadow-2xl"
         onClick={(e) => e.stopPropagation()}
+        onPointerUp={(e) => e.stopPropagation()}
       />
     </div>
   )

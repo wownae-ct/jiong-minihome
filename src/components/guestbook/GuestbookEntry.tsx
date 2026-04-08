@@ -78,28 +78,28 @@ export function GuestbookEntry({ entry, onDelete, onMemberClick }: GuestbookEntr
 
   return (
     <>
-      <div className="bg-white dark:bg-slate-800 rounded-xl p-3 sm:p-5 border border-slate-200 dark:border-slate-700">
+      <div className="border-b border-slate-100 dark:border-slate-700 pb-3 sm:pb-4 last:border-b-0 last:pb-0">
         {/* 헤더 */}
-        <div className="flex items-start justify-between mb-2 sm:mb-3">
-          <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-start justify-between mb-1.5 sm:mb-2">
+          <div className="flex items-center gap-2">
             {entry.user && onMemberClick ? (
               <button
                 onClick={() => onMemberClick(entry.user!.id)}
-                className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+                className="flex items-center gap-2 hover:opacity-80 transition-opacity"
               >
                 <ProfileAvatar
                   src={entry.user.profileImage}
                   alt={displayName}
-                  size="md"
+                  size="sm"
                 />
                 <div className="text-left">
-                  <p className="font-medium text-slate-900 dark:text-slate-100 flex items-center gap-2 hover:text-primary hover:underline transition-colors">
+                  <p className="text-sm font-medium text-slate-900 dark:text-slate-100 flex items-center gap-1.5 hover:text-primary hover:underline transition-colors">
                     {displayName}
                     {entry.isPrivate && (
                       <Icon name="lock" size="sm" className="text-slate-400" />
                     )}
                   </p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                  <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400">
                     {formattedDate}
                   </p>
                 </div>
@@ -109,16 +109,16 @@ export function GuestbookEntry({ entry, onDelete, onMemberClick }: GuestbookEntr
                 <ProfileAvatar
                   src={entry.user?.profileImage}
                   alt={displayName}
-                  size="md"
+                  size="sm"
                 />
                 <div>
-                  <p className="font-medium text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                  <p className="text-sm font-medium text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
                     {displayName}
                     {entry.isPrivate && (
                       <Icon name="lock" size="sm" className="text-slate-400" />
                     )}
                   </p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                  <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400">
                     {formattedDate}
                   </p>
                 </div>
@@ -129,7 +129,7 @@ export function GuestbookEntry({ entry, onDelete, onMemberClick }: GuestbookEntr
           {canDelete && (
             <button
               onClick={() => setShowDeleteModal(true)}
-              className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-red-500 transition-colors"
+              className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-red-500 transition-colors"
             >
               <Icon name="delete" size="sm" />
             </button>
@@ -137,7 +137,7 @@ export function GuestbookEntry({ entry, onDelete, onMemberClick }: GuestbookEntr
         </div>
 
         {/* 내용 */}
-        <p className={`whitespace-pre-wrap text-sm sm:text-base ${
+        <p className={`whitespace-pre-wrap text-sm ${
           entry.isPrivate && !isOwner && !isAdmin
             ? 'text-slate-400 dark:text-slate-500 italic text-xs sm:text-[13px]'
             : 'text-slate-700 dark:text-slate-300'

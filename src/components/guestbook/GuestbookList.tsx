@@ -58,23 +58,23 @@ export function GuestbookList() {
 
   if (error) {
     return (
-      <div className="text-center py-12 text-slate-500 dark:text-slate-400">
+      <div className="text-center py-8 text-sm text-slate-500 dark:text-slate-400">
         방명록을 불러오는데 실패했습니다.
       </div>
     )
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-3 sm:space-y-5">
       {/* 작성 폼 */}
       <GuestbookForm onSuccess={handleRefresh} />
 
       {/* 목록 */}
-      <div className="space-y-3 sm:space-y-4">
+      <div className="space-y-0">
         {isLoading ? (
           Array.from({ length: 3 }).map((_, i) => <SkeletonPost key={i} />)
         ) : data?.entries.length === 0 ? (
-          <div className="text-center py-12 text-slate-500 dark:text-slate-400">
+          <div className="text-center py-8 text-sm text-slate-500 dark:text-slate-400">
             아직 방명록이 없습니다. 첫 번째 방명록을 남겨주세요!
           </div>
         ) : (
@@ -91,7 +91,7 @@ export function GuestbookList() {
 
       {/* 페이지네이션 */}
       {data && data.pagination.totalPages > 1 && (
-        <div className="pt-4">
+        <div className="pt-2">
           <Pagination
             currentPage={page}
             totalPages={data.pagination.totalPages}

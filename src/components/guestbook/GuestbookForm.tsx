@@ -60,26 +60,22 @@ export function GuestbookForm({ onSuccess }: GuestbookFormProps) {
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="bg-white dark:bg-slate-800 rounded-xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700"
+      className="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-3 sm:p-5 border border-slate-100 dark:border-slate-700"
     >
-      <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-slate-900 dark:text-slate-100">
-        방명록 작성
-      </h3>
-
-      <div className="space-y-3 sm:space-y-4">
+      <div className="space-y-3">
         {/* 비회원인 경우 이름, 비밀번호 입력 */}
         {!session && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-2 sm:gap-4">
             <Input
               label="이름"
-              placeholder="이름을 입력하세요"
+              placeholder="이름"
               error={errors.guestName?.message}
               {...register('guestName')}
             />
             <Input
               label="비밀번호"
               type="password"
-              placeholder="삭제 시 필요합니다"
+              placeholder="삭제 시 필요"
               error={errors.guestPassword?.message}
               {...register('guestPassword')}
             />
@@ -87,24 +83,24 @@ export function GuestbookForm({ onSuccess }: GuestbookFormProps) {
         )}
 
         <Textarea
-          label="내용"
           placeholder="방명록을 남겨주세요 (500자 이내)"
           error={errors.content?.message}
+          rows={2}
           {...register('content')}
         />
 
         <div className="flex items-center justify-between">
-          <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 cursor-pointer">
+          <label className="flex items-center gap-1.5 text-xs sm:text-sm text-slate-600 dark:text-slate-400 cursor-pointer">
             <input
               type="checkbox"
-              className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary"
+              className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded border-slate-300 text-primary focus:ring-primary"
               {...register('isPrivate')}
             />
             비밀글
           </label>
 
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? '작성 중...' : '작성하기'}
+          <Button type="submit" size="sm" disabled={isLoading}>
+            {isLoading ? '작성 중...' : '작성'}
           </Button>
         </div>
       </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { Icon } from "@/components/ui/Icon";
 import { ImageLightbox } from "@/components/ui/ImageLightbox";
@@ -16,8 +16,20 @@ export function ProfileCard() {
     const { status: adminStatus } = useAdminStatus();
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+    const closedAtRef = useRef(0);
 
     const isAdmin = session?.user?.role === "admin";
+
+    const openProfileLightbox = useCallback(() => {
+        if (isLoading) return;
+        if (Date.now() - closedAtRef.current < 300) return;
+        setIsLightboxOpen(true);
+    }, [isLoading]);
+
+    const closeProfileLightbox = useCallback(() => {
+        closedAtRef.current = Date.now();
+        setIsLightboxOpen(false);
+    }, []);
 
     const statusColors = {
         online: "bg-green-500",
@@ -50,7 +62,7 @@ export function ProfileCard() {
             <div className="relative inline-block">
                 <div
                     className="w-32 h-32 md:w-40 md:h-40 rounded-2xl overflow-hidden border-4 border-white dark:border-slate-600 shadow-lg mx-auto cursor-pointer touch-manipulation"
-                    onClick={() => !isLoading && setIsLightboxOpen(true)}
+                    onClick={openProfileLightbox}
                 >
                     {isLoading ? (
                         <div className="w-full h-full bg-slate-200 dark:bg-slate-700 animate-pulse" />
@@ -167,7 +179,7 @@ export function ProfileCard() {
 
             <ImageLightbox
                 isOpen={isLightboxOpen}
-                onClose={() => setIsLightboxOpen(false)}
+                onClose={closeProfileLightbox}
                 src={profile.imageUrl}
                 alt={`Profile of ${profile.name}`}
             />

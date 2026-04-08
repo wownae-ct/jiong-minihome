@@ -31,13 +31,20 @@ export function PortfolioDetail({
     const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
     const [lightboxAlt, setLightboxAlt] = useState('');
     const proseRef = useRef<HTMLDivElement>(null);
+    const closedAtRef = useRef(0);
     const deleteMutation = useDeletePortfolio();
     const toast = useToast();
     const images = parsePortfolioImages(project.image);
 
     const openLightbox = useCallback((src: string, alt: string) => {
+        if (Date.now() - closedAtRef.current < 300) return;
         setLightboxSrc(src);
         setLightboxAlt(alt);
+    }, []);
+
+    const closeLightbox = useCallback(() => {
+        closedAtRef.current = Date.now();
+        setLightboxSrc(null);
     }, []);
 
     useEffect(() => {
@@ -275,7 +282,7 @@ export function PortfolioDetail({
 
             <ImageLightbox
                 isOpen={!!lightboxSrc}
-                onClose={() => setLightboxSrc(null)}
+                onClose={closeLightbox}
                 src={lightboxSrc || ''}
                 alt={lightboxAlt}
             />
