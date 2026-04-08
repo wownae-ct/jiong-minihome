@@ -62,11 +62,11 @@ export function GuestbookForm({ onSuccess }: GuestbookFormProps) {
       onSubmit={handleSubmit(onSubmit)}
       className="bg-white dark:bg-slate-800 rounded-xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700"
     >
-      <h3 className="text-lg font-semibold mb-4 text-slate-900 dark:text-slate-100">
+      <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-slate-900 dark:text-slate-100">
         방명록 작성
       </h3>
 
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         {/* 비회원인 경우 이름, 비밀번호 입력 */}
         {!session && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

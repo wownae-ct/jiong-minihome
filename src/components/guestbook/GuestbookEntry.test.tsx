@@ -89,7 +89,7 @@ describe("GuestbookEntry", () => {
         const content = screen.getByText("비밀글입니다.");
         expect(content).toHaveClass("text-slate-400");
         expect(content).toHaveClass("italic");
-        expect(content).toHaveClass("text-[13px]");
+        expect(content).toHaveClass("sm:text-[13px]");
     });
 
     it("비밀글이지만 작성자 본인이 볼 때는 기본 색상으로 표시해야 함", () => {

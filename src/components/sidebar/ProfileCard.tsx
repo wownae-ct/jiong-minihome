@@ -49,7 +49,7 @@ export function ProfileCard() {
             {/* 프로필 이미지 */}
             <div className="relative inline-block">
                 <div
-                    className="w-32 h-32 md:w-40 md:h-40 rounded-2xl overflow-hidden border-4 border-white dark:border-slate-600 shadow-lg mx-auto cursor-pointer"
+                    className="w-32 h-32 md:w-40 md:h-40 rounded-2xl overflow-hidden border-4 border-white dark:border-slate-600 shadow-lg mx-auto cursor-pointer touch-manipulation"
                     onClick={() => !isLoading && setIsLightboxOpen(true)}
                 >
                     {isLoading ? (

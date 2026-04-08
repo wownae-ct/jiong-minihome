@@ -65,12 +65,12 @@ export function GuestbookList() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* 작성 폼 */}
       <GuestbookForm onSuccess={handleRefresh} />
 
       {/* 목록 */}
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         {isLoading ? (
           Array.from({ length: 3 }).map((_, i) => <SkeletonPost key={i} />)
         ) : data?.entries.length === 0 ? (

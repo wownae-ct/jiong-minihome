@@ -78,10 +78,10 @@ export function GuestbookEntry({ entry, onDelete, onMemberClick }: GuestbookEntr
 
   return (
     <>
-      <div className="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700">
+      <div className="bg-white dark:bg-slate-800 rounded-xl p-3 sm:p-5 border border-slate-200 dark:border-slate-700">
         {/* 헤더 */}
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-center gap-3">
+        <div className="flex items-start justify-between mb-2 sm:mb-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             {entry.user && onMemberClick ? (
               <button
                 onClick={() => onMemberClick(entry.user!.id)}
@@ -137,9 +137,9 @@ export function GuestbookEntry({ entry, onDelete, onMemberClick }: GuestbookEntr
         </div>
 
         {/* 내용 */}
-        <p className={`whitespace-pre-wrap ${
+        <p className={`whitespace-pre-wrap text-sm sm:text-base ${
           entry.isPrivate && !isOwner && !isAdmin
-            ? 'text-slate-400 dark:text-slate-500 italic text-[13px]'
+            ? 'text-slate-400 dark:text-slate-500 italic text-xs sm:text-[13px]'
             : 'text-slate-700 dark:text-slate-300'
         }`}>
           {entry.content}

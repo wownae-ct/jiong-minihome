@@ -74,6 +74,7 @@ export function PostDetail({ post, onBack, onEdit, onDelete, onMemberClick }: Po
 
     imgs.forEach((img) => {
       img.style.cursor = 'pointer'
+      img.style.touchAction = 'manipulation'
       img.addEventListener('click', handleClick)
     })
 

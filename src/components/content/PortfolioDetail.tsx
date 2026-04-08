@@ -52,6 +52,7 @@ export function PortfolioDetail({
 
         imgs.forEach((img) => {
             img.style.cursor = 'pointer';
+            img.style.touchAction = 'manipulation';
             img.addEventListener('click', handleClick);
         });
 
@@ -122,15 +123,19 @@ export function PortfolioDetail({
             {images.length > 0 ? (
                 <div className={`grid ${images.length === 2 ? 'grid-cols-2' : 'grid-cols-1'} gap-0`}>
                     {images.map((img, idx) => (
-                        <div key={idx} className="aspect-video bg-gradient-to-br from-primary/20 to-blue-600/20 overflow-hidden">
+                        <button
+                            key={idx}
+                            type="button"
+                            className="aspect-video bg-gradient-to-br from-primary/20 to-blue-600/20 overflow-hidden cursor-pointer touch-manipulation"
+                            onClick={() => openLightbox(img, `${project.title} ${idx + 1}`)}
+                        >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                                 src={img}
                                 alt={`${project.title} ${idx + 1}`}
-                                className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                                onClick={() => openLightbox(img, `${project.title} ${idx + 1}`)}
+                                className="w-full h-full object-cover hover:opacity-90 transition-opacity pointer-events-none"
                             />
-                        </div>
+                        </button>
                     ))}
                 </div>
             ) : (
