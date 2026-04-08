@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { Icon } from "@/components/ui/Icon";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { ImageLightbox } from "@/components/ui/ImageLightbox";
 import { Portfolio, useDeletePortfolio } from "@/hooks/usePortfolios";
 import { useToast } from "@/components/providers/ToastProvider";
 import { motion } from "framer-motion";
@@ -27,9 +28,39 @@ export function PortfolioDetail({
     const { data: session } = useSession();
     const isAdmin = session?.user?.role === "admin";
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+    const [lightboxAlt, setLightboxAlt] = useState('');
+    const proseRef = useRef<HTMLDivElement>(null);
     const deleteMutation = useDeletePortfolio();
     const toast = useToast();
     const images = parsePortfolioImages(project.image);
+
+    const openLightbox = useCallback((src: string, alt: string) => {
+        setLightboxSrc(src);
+        setLightboxAlt(alt);
+    }, []);
+
+    useEffect(() => {
+        const container = proseRef.current;
+        if (!container) return;
+
+        const imgs = container.querySelectorAll('img');
+        const handleClick = (e: Event) => {
+            const img = e.currentTarget as HTMLImageElement;
+            openLightbox(img.src, img.alt || '');
+        };
+
+        imgs.forEach((img) => {
+            img.style.cursor = 'pointer';
+            img.addEventListener('click', handleClick);
+        });
+
+        return () => {
+            imgs.forEach((img) => {
+                img.removeEventListener('click', handleClick);
+            });
+        };
+    }, [project.content, openLightbox]);
 
     const handleDelete = async () => {
         try {
@@ -96,7 +127,8 @@ export function PortfolioDetail({
                             <img
                                 src={img}
                                 alt={`${project.title} ${idx + 1}`}
-                                className="w-full h-full object-cover"
+                                className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                                onClick={() => openLightbox(img, `${project.title} ${idx + 1}`)}
                             />
                         </div>
                     ))}
@@ -160,6 +192,7 @@ export function PortfolioDetail({
                             상세 내용
                         </h3>
                         <div
+                            ref={proseRef}
                             className="prose prose-slate dark:prose-invert max-w-none overflow-hidden"
                             dangerouslySetInnerHTML={{
                                 __html: highlightCodeBlocks(project.content),
@@ -234,6 +267,13 @@ export function PortfolioDetail({
                     </div>
                 </div>
             )}
+
+            <ImageLightbox
+                isOpen={!!lightboxSrc}
+                onClose={() => setLightboxSrc(null)}
+                src={lightboxSrc || ''}
+                alt={lightboxAlt}
+            />
         </motion.div>
     );
 }

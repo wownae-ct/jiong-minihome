@@ -60,7 +60,7 @@ export function GuestbookForm({ onSuccess }: GuestbookFormProps) {
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700"
+      className="bg-white dark:bg-slate-800 rounded-xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700"
     >
       <h3 className="text-lg font-semibold mb-4 text-slate-900 dark:text-slate-100">
         방명록 작성

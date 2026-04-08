@@ -55,7 +55,7 @@ export function CommentSection({ postId, onMemberClick }: CommentSectionProps) {
   }
 
   return (
-    <div className="mt-6 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
+    <div className="mt-6 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 sm:p-6">
       <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">
         댓글 {comments?.length || 0}개
       </h3>

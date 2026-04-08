@@ -15,7 +15,7 @@ export function WelcomeSection() {
     };
 
     return (
-        <div className="flex-1 flex flex-col justify-center items-center text-center p-8 md:p-12 bg-slate-50/50 dark:bg-slate-800/20 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-700">
+        <div className="flex-1 flex flex-col justify-center items-center text-center p-4 sm:p-8 md:p-12 bg-slate-50/50 dark:bg-slate-800/20 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-700">
             {/* 서버 인프라 이미지 */}
             <Image
                 src={serverImageUrl}

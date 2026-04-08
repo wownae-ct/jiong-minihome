@@ -67,7 +67,7 @@ export function WelcomeDetail() {
             </div>
 
             {/* 본문 */}
-            <div className="p-6 md:p-8 space-y-8">
+            <div className="p-4 sm:p-6 md:p-8 space-y-8">
                 {isLoading ? (
                     <div className="space-y-4 animate-pulse">
                         <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded w-3/4" />

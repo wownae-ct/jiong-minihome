@@ -21,7 +21,7 @@ export function DiaryCard() {
   return (
     <div
       onClick={handleCardClick}
-      className="bg-slate-50 dark:bg-slate-800/40 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 group hover:shadow-md transition-shadow cursor-pointer"
+      className="bg-slate-50 dark:bg-slate-800/40 p-4 sm:p-6 rounded-2xl border border-slate-100 dark:border-slate-700 group hover:shadow-md transition-shadow cursor-pointer"
     >
       {/* 헤더 */}
       <div className="flex items-center justify-between mb-4">

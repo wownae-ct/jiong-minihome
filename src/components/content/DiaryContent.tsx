@@ -38,7 +38,7 @@ function DiaryLoadingSkeleton() {
                 {[1, 2, 3].map((i) => (
                     <div
                         key={i}
-                        className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-6 animate-pulse"
+                        className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4 sm:p-6 animate-pulse"
                     >
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-12 h-12 bg-slate-200 dark:bg-slate-600 rounded" />
@@ -88,7 +88,7 @@ function DiaryEntryCard({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className={`rounded-xl p-6 ${!entry.isPublic ? "bg-slate-100/80 dark:bg-slate-700/30 border border-dashed border-slate-300 dark:border-slate-600" : "bg-slate-50 dark:bg-slate-700/50"}`}
+            className={`rounded-xl p-4 sm:p-6 ${!entry.isPublic ? "bg-slate-100/80 dark:bg-slate-700/30 border border-dashed border-slate-300 dark:border-slate-600" : "bg-slate-50 dark:bg-slate-700/50"}`}
         >
             <div className="mb-4">
                 <div className="flex items-center justify-between gap-2">

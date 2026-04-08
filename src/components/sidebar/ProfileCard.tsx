@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { Icon } from "@/components/ui/Icon";
+import { ImageLightbox } from "@/components/ui/ImageLightbox";
 import { WriteButton } from "@/components/ui/WriteButton";
 import { ProfileEditModal } from "@/components/admin/ProfileEditModal";
 import { useProfile } from "@/components/providers/ProfileContext";
@@ -14,6 +15,7 @@ export function ProfileCard() {
     const { profile, isLoading, refreshProfile } = useProfile();
     const { status: adminStatus } = useAdminStatus();
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
     const isAdmin = session?.user?.role === "admin";
 
@@ -46,7 +48,10 @@ export function ProfileCard() {
 
             {/* 프로필 이미지 */}
             <div className="relative inline-block">
-                <div className="w-32 h-32 md:w-40 md:h-40 rounded-2xl overflow-hidden border-4 border-white dark:border-slate-600 shadow-lg mx-auto">
+                <div
+                    className="w-32 h-32 md:w-40 md:h-40 rounded-2xl overflow-hidden border-4 border-white dark:border-slate-600 shadow-lg mx-auto cursor-pointer"
+                    onClick={() => !isLoading && setIsLightboxOpen(true)}
+                >
                     {isLoading ? (
                         <div className="w-full h-full bg-slate-200 dark:bg-slate-700 animate-pulse" />
                     ) : (
@@ -158,6 +163,13 @@ export function ProfileCard() {
                 onClose={() => setIsEditModalOpen(false)}
                 onSuccess={handleEditSuccess}
                 initialData={profile}
+            />
+
+            <ImageLightbox
+                isOpen={isLightboxOpen}
+                onClose={() => setIsLightboxOpen(false)}
+                src={profile.imageUrl}
+                alt={`Profile of ${profile.name}`}
             />
         </div>
     );

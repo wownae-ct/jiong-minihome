@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { Icon } from '@/components/ui/Icon'
+import { ImageLightbox } from '@/components/ui/ImageLightbox'
 import { useToast } from '@/components/providers/ToastProvider'
 import { LikeButton } from '@/components/common/LikeButton'
 import { PasswordModal } from '@/components/common/PasswordModal'
@@ -52,6 +53,36 @@ export function PostDetail({ post, onBack, onEdit, onDelete, onMemberClick }: Po
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [passwordAction, setPasswordAction] = useState<'edit' | 'delete'>('delete')
   const [isDeleting, setIsDeleting] = useState(false)
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null)
+  const [lightboxAlt, setLightboxAlt] = useState('')
+  const proseRef = useRef<HTMLDivElement>(null)
+
+  const openLightbox = useCallback((src: string, alt: string) => {
+    setLightboxSrc(src)
+    setLightboxAlt(alt)
+  }, [])
+
+  useEffect(() => {
+    const container = proseRef.current
+    if (!container) return
+
+    const imgs = container.querySelectorAll('img')
+    const handleClick = (e: Event) => {
+      const img = e.currentTarget as HTMLImageElement
+      openLightbox(img.src, img.alt || '')
+    }
+
+    imgs.forEach((img) => {
+      img.style.cursor = 'pointer'
+      img.addEventListener('click', handleClick)
+    })
+
+    return () => {
+      imgs.forEach((img) => {
+        img.removeEventListener('click', handleClick)
+      })
+    }
+  }, [post.content, openLightbox])
 
   const isOwner = session?.user?.id === String(post.userId)
   const isAdmin = session?.user?.role === 'admin'
@@ -219,6 +250,7 @@ export function PostDetail({ post, onBack, onEdit, onDelete, onMemberClick }: Po
         <div className="p-4 sm:p-6">
           {isHtmlContent(post.content) ? (
             <div
+              ref={proseRef}
               className="prose dark:prose-invert max-w-none"
               dangerouslySetInnerHTML={{ __html: highlightCodeBlocks(sanitizeHtml(post.content)) }}
             />
@@ -286,6 +318,13 @@ export function PostDetail({ post, onBack, onEdit, onDelete, onMemberClick }: Po
         title="게시글 삭제"
         message="정말 이 게시글을 삭제하시겠습니까?"
         isLoading={isDeleting}
+      />
+
+      <ImageLightbox
+        isOpen={!!lightboxSrc}
+        onClose={() => setLightboxSrc(null)}
+        src={lightboxSrc || ''}
+        alt={lightboxAlt}
       />
     </>
   )
