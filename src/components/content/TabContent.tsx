@@ -2,6 +2,7 @@
 
 import { useTab } from '@/components/providers/TabContext'
 import { WhatsNew } from './WhatsNew'
+import { WelcomeDetail } from './WelcomeDetail'
 import { CareerContent } from './CareerContent'
 import { PortfolioContent } from './PortfolioContent'
 import { CommunityContent } from './CommunityContent'
@@ -30,7 +31,7 @@ const tabVariants = {
 }
 
 export function TabContent() {
-  const { activeTab, setActiveTab } = useTab()
+  const { activeTab, welcomeDetailOpen, setActiveTab } = useTab()
   const { data: session } = useSession()
 
   // 키보드 네비게이션 활성화
@@ -41,10 +42,18 @@ export function TabContent() {
     setActiveTab('intro')
   }
 
+  // intro 탭 내부에서 welcomeDetailOpen 여부에 따라 가상 탭 key 생성.
+  // 이전 구조(WhatsNew 내부의 중첩 AnimatePresence)는 바깥 AnimatePresence와
+  // exit 애니메이션 lifecycle이 충돌하여 잠김 상태를 유발했음.
+  // 이제 WelcomeDetail은 바깥 AnimatePresence 한 층에서만 관리된다.
+  const virtualKey =
+    activeTab === 'intro' && welcomeDetailOpen ? 'intro-detail' : activeTab
+
   const renderContent = () => {
+    if (activeTab === 'intro') {
+      return welcomeDetailOpen ? <WelcomeDetail /> : <WhatsNew />
+    }
     switch (activeTab) {
-      case 'intro':
-        return <WhatsNew />
       case 'career':
         return <CareerContent />
       case 'portfolio':
@@ -73,10 +82,10 @@ export function TabContent() {
   }
 
   return (
-    <ErrorBoundary onReset={handleErrorReset}>
+    <ErrorBoundary onReset={handleErrorReset} resetKey={virtualKey}>
       <AnimatePresence mode="wait">
         <motion.div
-          key={activeTab}
+          key={virtualKey}
           variants={tabVariants}
           initial="initial"
           animate="animate"

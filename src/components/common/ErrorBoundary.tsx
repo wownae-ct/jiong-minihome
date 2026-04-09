@@ -7,21 +7,47 @@ interface Props {
   children: ReactNode
   fallback?: ReactNode
   onReset?: () => void
+  /**
+   * 이 prop이 변경되면 에러 상태가 자동으로 리셋된다.
+   * 보통 부모에서 라우트/탭 키를 넘겨 "다른 화면으로 이동했으니 에러 초기화" 시맨틱으로 사용.
+   */
+  resetKey?: string | number | null
 }
 
 interface State {
   hasError: boolean
   error: Error | null
+  /** 현재 state가 반영하는 resetKey 값 (getDerivedStateFromProps로 추적) */
+  lastResetKey: Props['resetKey']
 }
 
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props)
-    this.state = { hasError: false, error: null }
+    this.state = { hasError: false, error: null, lastResetKey: props.resetKey }
   }
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): Partial<State> {
     return { hasError: true, error }
+  }
+
+  /**
+   * resetKey prop이 변경되면 render 전에 에러 상태를 자동 리셋한다.
+   * componentDidUpdate 방식은 두 번의 render 사이클이 필요하므로
+   * getDerivedStateFromProps로 한 번에 처리.
+   */
+  static getDerivedStateFromProps(
+    props: Props,
+    state: State
+  ): Partial<State> | null {
+    if (props.resetKey !== state.lastResetKey) {
+      return {
+        hasError: false,
+        error: null,
+        lastResetKey: props.resetKey,
+      }
+    }
+    return null
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {

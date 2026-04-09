@@ -17,11 +17,16 @@ vi.mock('framer-motion', () => ({
   AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }))
 
-vi.mock('@/components/providers/TabContext', () => ({
-  useTab: () => ({
-    goBack: vi.fn(),
-    setActiveTab: vi.fn(),
-    setWelcomeDetail: vi.fn(),
+const setWelcomeDetailMock = vi.fn()
+const setActiveTabMock = vi.fn()
+vi.mock('@/components/providers/tab', () => ({
+  useNavigation: () => ({
+    activeTab: 'intro',
+    setActiveTab: setActiveTabMock,
+  }),
+  useWelcomeView: () => ({
+    welcomeDetailOpen: true,
+    setWelcomeDetail: setWelcomeDetailMock,
   }),
 }))
 
@@ -48,6 +53,11 @@ vi.mock('@/components/ui/Button', () => ({
 import { WelcomeDetail } from './WelcomeDetail'
 
 describe('WelcomeDetail', () => {
+  beforeEach(() => {
+    setWelcomeDetailMock.mockClear()
+    setActiveTabMock.mockClear()
+  })
+
   it('소개글에 줄바꿈이 있으면 줄바꿈이 렌더링되어야 함', () => {
     mockWelcomeSettings.mockReturnValue({
       data: {
@@ -66,5 +76,26 @@ describe('WelcomeDetail', () => {
     expect(descriptionEl).toBeInTheDocument()
     // whitespace-pre-line이 적용되어야 \n이 줄바꿈으로 렌더링됨
     expect(descriptionEl.className).toContain('whitespace-pre-line')
+  })
+
+  // R3: 뒤로가기 버튼은 window.history.back()이 아닌 명시적 setWelcomeDetail(false)를 호출해야 함
+  it('뒤로가기 버튼 클릭 시 setWelcomeDetail(false)가 호출되어야 함 (명시적 상태 전환)', () => {
+    mockWelcomeSettings.mockReturnValue({
+      data: {
+        title: '제목',
+        description: '설명',
+        skills: [],
+        values: [],
+      },
+      isLoading: false,
+    })
+
+    render(<WelcomeDetail />)
+
+    const backButton = screen.getByTestId('icon-arrow_back').closest('button')
+    expect(backButton).not.toBeNull()
+    backButton!.click()
+
+    expect(setWelcomeDetailMock).toHaveBeenCalledWith(false)
   })
 })

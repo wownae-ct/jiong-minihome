@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Icon } from '@/components/ui/Icon'
-import { useTab, TabId } from '@/components/providers/TabContext'
+import { useNavigation, useCommunityView, type TabId } from '@/components/providers/tab'
 
 interface NotificationData {
   id: number
@@ -54,7 +54,8 @@ async function fetchNotifications(): Promise<NotificationsResponse> {
 export function NotificationDropdown() {
   const { data: session } = useSession()
   const queryClient = useQueryClient()
-  const { setCommunityPost, setActiveTab } = useTab()
+  const { setCommunityPost } = useCommunityView()
+  const { setActiveTab } = useNavigation()
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 

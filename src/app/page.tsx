@@ -6,10 +6,10 @@ import { Footer } from '@/components/layout/Footer';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Sidebar } from '@/components/sidebar/Sidebar';
 import { TabContent } from '@/components/content/TabContent';
-import { TabProvider, useTab } from '@/components/providers/TabContext';
+import { TabProvider, useNavigation } from '@/components/providers/tab';
 
 function HomeContent() {
-  const { activeTab } = useTab();
+  const { activeTab } = useNavigation();
   const showSidebarOnMobile = activeTab === 'intro';
 
   return (

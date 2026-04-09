@@ -4,12 +4,12 @@ import { useState } from 'react'
 import { Icon } from '@/components/ui/Icon'
 import { UserManagement } from './UserManagement'
 import { VisitorAnalytics } from './VisitorAnalytics'
-import { useTab } from '@/components/providers/TabContext'
+import { useNavigation } from '@/components/providers/tab'
 
 type Tab = 'dashboard' | 'users' | 'analytics'
 
 export function AdminDashboard() {
-  const { setActiveTab: setMainTab } = useTab()
+  const { setActiveTab: setMainTab } = useNavigation()
   const [activeTab, setActiveTab] = useState<Tab>('dashboard')
 
   const tabs: { id: Tab; label: string; icon: string }[] = [

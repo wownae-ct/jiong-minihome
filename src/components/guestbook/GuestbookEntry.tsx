@@ -78,7 +78,7 @@ export function GuestbookEntry({ entry, onDelete, onMemberClick }: GuestbookEntr
 
   return (
     <>
-      <div className="border-b border-slate-100 dark:border-slate-700 pb-3 sm:pb-4 last:border-b-0 last:pb-0">
+      <div className="border-b border-slate-100 dark:border-slate-700 pt-3 sm:pt-4 pb-3 sm:pb-4 first:pt-0 last:border-b-0 last:pb-0">
         {/* 헤더 */}
         <div className="flex items-start justify-between mb-1.5 sm:mb-2">
           <div className="flex items-center gap-2">

@@ -11,11 +11,34 @@ interface LikeButtonProps {
   size?: 'sm' | 'md'
 }
 
+/**
+ * 보안 컨텍스트(HTTPS/localhost)가 아닌 환경에서도 동작하는 UUID v4 생성.
+ * crypto.randomUUID()는 secure context에서만 사용 가능하므로 폴백 제공.
+ */
+function generateUUID(): string {
+  // 우선 표준 API 시도 (HTTPS/localhost에서만 동작)
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+  // crypto.getRandomValues는 더 넓은 환경에서 지원됨
+  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+    const bytes = new Uint8Array(16)
+    crypto.getRandomValues(bytes)
+    // RFC 4122 variant/version 비트 설정
+    bytes[6] = (bytes[6] & 0x0f) | 0x40 // version 4
+    bytes[8] = (bytes[8] & 0x3f) | 0x80 // variant 10
+    const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
+  }
+  // 최후의 폴백 (crypto 자체가 없는 극단적 환경)
+  return `${Date.now().toString(16)}-${Math.random().toString(16).slice(2, 10)}-${Math.random().toString(16).slice(2, 10)}`
+}
+
 function getAnonymousId(): string {
   if (typeof window === 'undefined') return ''
   let id = localStorage.getItem('anonymousLikeId')
   if (!id) {
-    id = crypto.randomUUID()
+    id = generateUUID()
     localStorage.setItem('anonymousLikeId', id)
   }
   return id

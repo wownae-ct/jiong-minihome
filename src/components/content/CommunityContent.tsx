@@ -10,10 +10,11 @@ import { MemberProfileModal } from '@/components/community/MemberProfileModal'
 import { PostSearchBar, SearchType } from '@/components/community/PostSearchBar'
 import { Icon } from '@/components/ui/Icon'
 import { useToast } from '@/components/providers/ToastProvider'
-import { useTab } from '@/components/providers/TabContext'
+import { useCommunityView } from '@/components/providers/tab'
 
 type Category = 'all' | 'free' | 'qna' | 'info'
-type ViewMode = 'list' | 'write' | 'detail' | 'edit'
+// ViewMode는 communityPostId와 로컬 액션(write/edit)으로부터 파생됨 — 별도 상태 저장 X
+type LocalAction = 'write' | 'edit' | null
 
 interface PostData {
   id: number
@@ -43,16 +44,26 @@ interface PostData {
 export function CommunityContent() {
   const { error: showError } = useToast()
   const queryClient = useQueryClient()
-  const { communityPostId, setCommunityPost } = useTab()
+  const { communityPostId, setCommunityPost } = useCommunityView()
   const [activeCategory, setActiveCategory] = useState<Category>('all')
-  const [viewMode, setViewMode] = useState<ViewMode>(() => communityPostId ? 'detail' : 'list')
-  const [selectedPostId, setSelectedPostId] = useState<number | null>(communityPostId)
+  // viewMode는 더 이상 로컬 상태가 아님: communityPostId(상세)와 localAction(글쓰기/수정)으로부터 파생
+  const [localAction, setLocalAction] = useState<LocalAction>(null)
   const [selectedPost, setSelectedPost] = useState<PostData | null>(null)
   const [isLoadingPost, setIsLoadingPost] = useState(false)
   const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchType, setSearchType] = useState<SearchType>('title')
   const [editGuestPassword, setEditGuestPassword] = useState<string | undefined>()
+
+  // viewMode는 파생 값 — 저장된 상태가 아니라 단일 진실 공급원(communityPostId/localAction)에서 계산됨
+  const viewMode: 'list' | 'write' | 'detail' | 'edit' =
+    localAction === 'write'
+      ? 'write'
+      : localAction === 'edit'
+      ? 'edit'
+      : communityPostId !== null
+      ? 'detail'
+      : 'list'
 
   const categories: { id: Category; label: string }[] = [
     { id: 'all', label: '전체' },
@@ -72,70 +83,56 @@ export function CommunityContent() {
       setSelectedPost(data)
     } catch {
       showError('게시글을 불러오는데 실패했습니다')
-      setViewMode('list')
+      setCommunityPost(null)
     } finally {
       setIsLoadingPost(false)
     }
-  }, [showError])
+  }, [showError, setCommunityPost])
 
+  // communityPostId 변경 시 게시글 fetch (브라우저 뒤/앞 네비게이션 포함)
   useEffect(() => {
-    if (selectedPostId && viewMode === 'detail') {
-      fetchPost(selectedPostId)
-    }
-  }, [selectedPostId, viewMode, fetchPost])
-
-  // 해시 변경(브라우저 뒤로가기/앞으로가기) 시 TabContext와 동기화
-  useEffect(() => {
-    if (communityPostId && communityPostId !== selectedPostId) {
-      setSelectedPostId(communityPostId)
-      setViewMode('detail')
-    } else if (!communityPostId && viewMode === 'detail') {
-      setViewMode('list')
-      setSelectedPostId(null)
+    if (communityPostId !== null) {
+      fetchPost(communityPostId)
+    } else {
       setSelectedPost(null)
     }
-  }, [communityPostId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [communityPostId, fetchPost])
 
   const handlePostClick = (postId: number, categorySlug: string) => {
-    setSelectedPostId(postId)
-    setViewMode('detail')
+    setLocalAction(null)
     setCommunityPost(postId, categorySlug)
   }
 
   const handleBack = () => {
-    setViewMode('list')
-    setSelectedPostId(null)
-    setSelectedPost(null)
+    setLocalAction(null)
     setEditGuestPassword(undefined)
     setCommunityPost(null)
   }
 
   const handleWriteClick = () => {
-    setViewMode('write')
+    setLocalAction('write')
   }
 
   const handleWriteSuccess = () => {
-    setViewMode('list')
+    setLocalAction(null)
     queryClient.invalidateQueries({ queryKey: ['posts'] })
   }
 
   const handleEditClick = (guestPassword?: string) => {
     setEditGuestPassword(guestPassword)
-    setViewMode('edit')
+    setLocalAction('edit')
   }
 
   const handleEditSuccess = () => {
-    if (selectedPostId) {
-      fetchPost(selectedPostId)
+    if (communityPostId) {
+      fetchPost(communityPostId)
     }
-    setViewMode('detail')
+    setLocalAction(null)
     setEditGuestPassword(undefined)
   }
 
   const handleDeleteSuccess = () => {
-    setViewMode('list')
-    setSelectedPostId(null)
-    setSelectedPost(null)
+    setLocalAction(null)
     setCommunityPost(null)
     queryClient.invalidateQueries({ queryKey: ['posts'] })
   }
@@ -146,8 +143,7 @@ export function CommunityContent() {
 
   const handleMemberPostClick = (postId: number) => {
     setSelectedMemberId(null)
-    setSelectedPostId(postId)
-    setViewMode('detail')
+    setLocalAction(null)
     setCommunityPost(postId)
   }
 
@@ -237,7 +233,7 @@ export function CommunityContent() {
             isGuestPost: !selectedPost.userId && !!selectedPost.guestName,
           }}
           guestPassword={editGuestPassword}
-          onCancel={() => setViewMode('detail')}
+          onCancel={() => setLocalAction(null)}
           onSuccess={handleEditSuccess}
         />
       )}

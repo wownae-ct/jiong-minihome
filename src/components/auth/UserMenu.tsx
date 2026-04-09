@@ -4,12 +4,12 @@ import { useState, useRef, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import { Icon } from "@/components/ui/Icon";
-import { useTab } from "@/components/providers/TabContext";
+import { useNavigation } from "@/components/providers/tab";
 import { ProfileAvatar } from "@/components/common/ProfileAvatar";
 
 export function UserMenu() {
     const { data: session } = useSession();
-    const { setActiveTab } = useTab();
+    const { setActiveTab } = useNavigation();
     const [isOpen, setIsOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
 

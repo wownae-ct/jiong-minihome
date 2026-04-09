@@ -1,6 +1,6 @@
 'use client';
 
-import { useTab, TabId } from '@/components/providers/TabContext';
+import { useNavigation, type TabId } from '@/components/providers/tab';
 import { Badge } from '@/components/ui/Badge';
 
 interface NavItem {
@@ -23,7 +23,7 @@ const navItems: NavItem[] = [
 ];
 
 export function Navigation() {
-  const { activeTab, setActiveTab } = useTab();
+  const { activeTab, setActiveTab } = useNavigation();
 
   return (
     <nav className="flex flex-wrap gap-1 items-end relative z-10 overflow-x-auto pb-1 -mb-1 scrollbar-hide">

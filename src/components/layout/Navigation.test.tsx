@@ -1,14 +1,20 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Navigation } from './Navigation'
-import { TabProvider, useTab } from '@/components/providers/TabContext'
+import { TabProvider, useNavigation } from '@/components/providers/tab'
 
 function TabDisplay() {
-  const { activeTab } = useTab()
+  const { activeTab } = useNavigation()
   return <div data-testid="current-tab">{activeTab}</div>
 }
 
 describe('Navigation', () => {
+  // 테스트 격리: TabProvider의 초기 URL 파싱이 다른 테스트의 잔여 hash에 영향받지 않도록 초기화
+  beforeEach(() => {
+    window.history.replaceState(null, '', '/')
+    window.location.hash = ''
+  })
+
   it('모든 네비게이션 탭이 렌더링되어야 함', () => {
     render(
       <TabProvider>

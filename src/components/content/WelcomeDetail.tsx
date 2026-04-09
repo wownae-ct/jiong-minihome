@@ -4,23 +4,22 @@ import { useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
+// motion import는 values 섹션/skills 섹션 내부의 개별 카드 애니메이션에서 사용됨
 import { Icon } from "@/components/ui/Icon";
 import { Button } from "@/components/ui/Button";
-import { useTab } from "@/components/providers/TabContext";
+import { useNavigation, useWelcomeView } from "@/components/providers/tab";
 import { useWelcomeSettings } from "@/hooks/useWelcomeSettings";
 import { WelcomeEditModal } from "@/components/admin/WelcomeEditModal";
+import { WELCOME_HEADER_IMAGE_URL } from "./constants/welcomeConstants";
 
 export function WelcomeDetail() {
-    const { goBack, setActiveTab } = useTab();
+    const { setWelcomeDetail } = useWelcomeView();
+    const { setActiveTab } = useNavigation();
     const { data: session } = useSession();
     const { data: settings, isLoading } = useWelcomeSettings();
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
     const isAdmin = session?.user?.role === "admin";
-
-    // 헤더용 네트워크/클라우드 이미지 (WelcomeSection과 다른 이미지 사용)
-    const headerImageUrl =
-        "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1200&h=400&fit=crop";
 
     // 로딩 중일 때 기본값 사용
     const skills = settings?.skills || [];
@@ -30,26 +29,23 @@ export function WelcomeDetail() {
     const description = settings?.description || "";
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden"
-        >
+        // 이 컴포넌트는 TabContent의 바깥 AnimatePresence/motion.div 하위에서 렌더링된다.
+        // 중첩 motion.div는 exit 애니메이션 lifecycle 충돌을 유발했으므로 제거됨.
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
             {/* 헤더 */}
             <div className="relative h-48 md:h-64 bg-gradient-to-br from-primary/20 via-blue-500/10 to-purple-500/20">
                 <div className="absolute inset-0 flex items-center justify-center">
                     <Image
-                        src={headerImageUrl}
+                        src={WELCOME_HEADER_IMAGE_URL}
                         alt="Network and cloud infrastructure"
                         width={1200}
                         height={400}
                         className="w-full h-full object-cover opacity-60"
                     />
                 </div>
-                {/* 뒤로가기 버튼 */}
+                {/* 뒤로가기 버튼 (R3: window.history.back() 대신 명시적 상태 전환) */}
                 <button
-                    onClick={goBack}
+                    onClick={() => setWelcomeDetail(false)}
                     className="absolute top-4 left-4 w-10 h-10 flex items-center justify-center bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-lg hover:bg-white dark:hover:bg-slate-700 transition-colors"
                 >
                     <Icon name="arrow_back" size="md" />
@@ -200,6 +196,6 @@ export function WelcomeDetail() {
                 isOpen={isEditModalOpen}
                 onClose={() => setIsEditModalOpen(false)}
             />
-        </motion.div>
+        </div>
     );
 }

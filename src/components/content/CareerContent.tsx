@@ -1,74 +1,29 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useSession } from 'next-auth/react'
+import { useQueryClient } from '@tanstack/react-query'
 import { Icon } from '@/components/ui/Icon'
 import { WriteButton } from '@/components/ui/WriteButton'
 import { CareerEditModal } from '@/components/admin/CareerEditModal'
 import { CareerDetailModal } from '@/components/admin/CareerDetailModal'
+import { useCareers } from '@/hooks/useCareers'
 import { CareerItem } from '@/lib/validations/admin-content'
-
-const defaultCareers: CareerItem[] = [
-  {
-    id: 1,
-    company: '테크 컴퍼니',
-    position: 'Senior Infrastructure Engineer',
-    period: '2022.03 - 현재',
-    description: '클라우드 인프라 설계 및 운영, Kubernetes 기반 컨테이너 환경 구축',
-    skills: ['AWS', 'Kubernetes', 'Terraform', 'Docker'],
-    isCurrent: true,
-  },
-  {
-    id: 2,
-    company: '스타트업 ABC',
-    position: 'DevOps Engineer',
-    period: '2020.01 - 2022.02',
-    description: 'CI/CD 파이프라인 구축, 모니터링 시스템 도입 및 운영',
-    skills: ['Jenkins', 'GitLab CI', 'Prometheus', 'Grafana'],
-    isCurrent: false,
-  },
-  {
-    id: 3,
-    company: 'IT 서비스',
-    position: 'System Administrator',
-    period: '2018.06 - 2019.12',
-    description: '온프레미스 서버 운영 및 관리, 네트워크 인프라 유지보수',
-    skills: ['Linux', 'Windows Server', 'VMware', 'Network'],
-    isCurrent: false,
-  },
-]
 
 export function CareerContent() {
   const { data: session } = useSession()
-  const [careers, setCareers] = useState<CareerItem[]>(defaultCareers)
+  const queryClient = useQueryClient()
+  // R5: 기존 useState + useEffect + fetch 패턴을 react-query로 교체
+  // - 캐싱/중복 제거/자동 재검증 등 react-query 이점 확보
+  // - 다른 content 컴포넌트(usePortfolios, useDiaries)와 일관성
+  const { data: careers = [], isLoading } = useCareers()
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
   const [selectedCareer, setSelectedCareer] = useState<CareerItem | null>(null)
 
   const isAdmin = session?.user?.role === 'admin'
 
-  const fetchCareers = async () => {
-    try {
-      const response = await fetch('/api/admin/content?type=careers')
-      if (response.ok) {
-        const { data } = await response.json()
-        if (data && data.length > 0) {
-          setCareers(data)
-        }
-      }
-    } catch (error) {
-      console.error('경력 로딩 실패:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchCareers()
-  }, [])
-
   const handleEditSuccess = () => {
-    fetchCareers()
+    queryClient.invalidateQueries({ queryKey: ['careers'] })
   }
 
   return (

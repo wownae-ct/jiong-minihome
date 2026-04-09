@@ -5,11 +5,11 @@ import { Button } from "@/components/ui/Button";
 import { useTheme } from "@/components/providers/ThemeProvider";
 import { UserMenu } from "@/components/auth/UserMenu";
 import { NotificationDropdown } from "@/components/common/NotificationDropdown";
-import { useTab } from "@/components/providers/TabContext";
+import { useNavigation } from "@/components/providers/tab";
 
 export function Header() {
     const { toggleTheme } = useTheme();
-    const { setActiveTab } = useTab();
+    const { setActiveTab } = useNavigation();
 
     const handleLogoClick = (e: React.MouseEvent) => {
         e.preventDefault();

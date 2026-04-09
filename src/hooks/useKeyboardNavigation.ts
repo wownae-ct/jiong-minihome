@@ -1,7 +1,11 @@
 'use client'
 
 import { useEffect, useCallback } from 'react'
-import { useTab, TabId } from '@/components/providers/TabContext'
+import {
+  useNavigation,
+  usePortfolioView,
+  type TabId,
+} from '@/components/providers/tab'
 
 const TAB_SHORTCUTS: Record<string, TabId> = {
   '1': 'intro',
@@ -13,7 +17,8 @@ const TAB_SHORTCUTS: Record<string, TabId> = {
 }
 
 export function useKeyboardNavigation() {
-  const { activeTab, setActiveTab, portfolioDetailId, setPortfolioDetail, goBack } = useTab()
+  const { activeTab, setActiveTab } = useNavigation()
+  const { portfolioDetailId, setPortfolioDetail } = usePortfolioView()
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
@@ -39,15 +44,17 @@ export function useKeyboardNavigation() {
         return
       }
 
-      // Alt + 좌/우 화살표로 히스토리 네비게이션
+      // Alt + 좌/우 화살표로 히스토리 네비게이션 (브라우저 히스토리 기반)
       if (event.altKey && !event.ctrlKey && !event.metaKey) {
         if (event.key === 'ArrowLeft') {
           event.preventDefault()
-          goBack()
+          if (typeof window !== 'undefined') {
+            window.history.back()
+          }
         }
       }
     },
-    [activeTab, portfolioDetailId, setActiveTab, setPortfolioDetail, goBack]
+    [activeTab, portfolioDetailId, setActiveTab, setPortfolioDetail]
   )
 
   useEffect(() => {

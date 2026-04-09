@@ -2,13 +2,11 @@
 
 import Image from "next/image";
 import { Icon } from "@/components/ui/Icon";
-import { useTab } from "@/components/providers/TabContext";
+import { useWelcomeView } from "@/components/providers/tab";
+import { WELCOME_SERVER_IMAGE_URL } from "./constants/welcomeConstants";
 
 export function WelcomeSection() {
-    const { setWelcomeDetail } = useTab();
-
-    const serverImageUrl =
-        "https://lh3.googleusercontent.com/aida-public/AB6AXuBpAQmgpKCQq95ZoNIIwzLRA8DRwh6rIOwnXnpucxvakzeSK1UIzGMOOQ898nH52Bf2IPaUDmciWyAitcgaQijeWJLUIZ_YuRAYDpmImEaOrFvyTDMF7mq6j73c-o16cRUbg-406likvCIy2-TYoc0ZW3dPUSd0fuzcD-PkCiu5yzzQ5wlGtJxxGRun8_79iQYulHi69TIGLx6iPxt75avBtRVrvSZot6jHoQYxxQ3DxbpNu7XIhTV48yJqCNtBci9NV4xB-mwTr9E";
+    const { setWelcomeDetail } = useWelcomeView();
 
     const handleLearnMore = () => {
         setWelcomeDetail(true);
@@ -18,7 +16,7 @@ export function WelcomeSection() {
         <div className="flex-1 flex flex-col justify-center items-center text-center p-4 sm:p-8 md:p-12 bg-slate-50/50 dark:bg-slate-800/20 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-700">
             {/* 서버 인프라 이미지 */}
             <Image
-                src={serverImageUrl}
+                src={WELCOME_SERVER_IMAGE_URL}
                 alt="Server infrastructure visualization"
                 width={256}
                 height={160}

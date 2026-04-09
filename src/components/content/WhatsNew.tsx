@@ -5,9 +5,6 @@ import { Badge } from '@/components/ui/Badge';
 import { ProjectCard } from './ProjectCard';
 import { DiaryCard } from './DiaryCard';
 import { WelcomeSection } from './WelcomeSection';
-import { WelcomeDetail } from './WelcomeDetail';
-import { useTab } from '@/components/providers/TabContext';
-import { AnimatePresence } from 'framer-motion';
 
 function formatUpdateDate(isoString: string): string {
   const date = new Date(isoString)
@@ -22,7 +19,6 @@ function formatUpdateDate(isoString: string): string {
 }
 
 export function WhatsNew() {
-  const { welcomeDetailOpen } = useTab()
   const [updateDate, setUpdateDate] = useState<string | null>(null)
 
   useEffect(() => {
@@ -35,15 +31,6 @@ export function WhatsNew() {
       })
       .catch(() => {})
   }, [])
-
-  // 환영 섹션 상세 보기 모드
-  if (welcomeDetailOpen) {
-    return (
-      <AnimatePresence mode="wait">
-        <WelcomeDetail key="welcome-detail" />
-      </AnimatePresence>
-    )
-  }
 
   return (
     <div className="h-full flex flex-col">

@@ -1,11 +1,12 @@
 "use client";
 
 import { Icon } from "@/components/ui/Icon";
-import { useTab } from "@/components/providers/TabContext";
+import { useNavigation, usePortfolioView } from "@/components/providers/tab";
 import { useLatestPortfolios } from "@/hooks/usePortfolios";
 
 export function ProjectCard() {
-    const { setActiveTab, setPortfolioDetail } = useTab();
+    const { setActiveTab } = useNavigation();
+    const { setPortfolioDetail } = usePortfolioView();
     const { data: projects = [], isLoading } = useLatestPortfolios(3);
 
     const handleCardClick = () => {

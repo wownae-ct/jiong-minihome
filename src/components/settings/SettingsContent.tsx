@@ -10,14 +10,14 @@ import { AccountSettings } from './AccountSettings'
 import { NotificationSettings } from './NotificationSettings'
 import { ThemeSettings } from './ThemeSettings'
 import { BgmSettings } from './BgmSettings'
-import { useTab } from '@/components/providers/TabContext'
+import { useNavigation } from '@/components/providers/tab'
 import { useToast } from '@/components/providers/ToastProvider'
 
 type Tab = 'profile' | 'account' | 'notifications' | 'theme' | 'bgm'
 
 export function SettingsContent() {
   const { data: session } = useSession()
-  const { setActiveTab: setMainTab } = useTab()
+  const { setActiveTab: setMainTab } = useNavigation()
   const { error: showError } = useToast()
   const [activeTab, setActiveTab] = useState<Tab>('profile')
   const [isVerified, setIsVerified] = useState(false)

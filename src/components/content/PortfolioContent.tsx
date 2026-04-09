@@ -9,7 +9,7 @@ import { PortfolioWriteModal } from '@/components/admin/PortfolioWriteModal'
 import { TagManagement } from '@/components/admin/TagManagement'
 import { PortfolioDetail } from './PortfolioDetail'
 import { usePortfolios, Portfolio } from '@/hooks/usePortfolios'
-import { useTab } from '@/components/providers/TabContext'
+import { usePortfolioView } from '@/components/providers/tab'
 import { AnimatePresence, motion } from 'framer-motion'
 import { SearchFilter } from '@/components/common/SearchFilter'
 import { Pagination } from '@/components/ui/Pagination'
@@ -20,7 +20,7 @@ const PORTFOLIO_PAGE_SIZE = 4
 export function PortfolioContent() {
   const { data: session } = useSession()
   const { data: projects = [], isLoading, refetch } = usePortfolios()
-  const { portfolioDetailId, setPortfolioDetail } = useTab()
+  const { portfolioDetailId, setPortfolioDetail } = usePortfolioView()
   const [isWriteModalOpen, setIsWriteModalOpen] = useState(false)
   const [isTagManagementOpen, setIsTagManagementOpen] = useState(false)
   const [editingPortfolio, setEditingPortfolio] = useState<Portfolio | null>(null)

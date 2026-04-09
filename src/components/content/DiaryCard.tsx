@@ -1,11 +1,11 @@
 'use client'
 
 import { Icon } from '@/components/ui/Icon'
-import { useTab } from '@/components/providers/TabContext'
+import { useNavigation } from '@/components/providers/tab'
 import { useLatestDiaries } from '@/hooks/useDiaries'
 
 export function DiaryCard() {
-  const { setActiveTab } = useTab()
+  const { setActiveTab } = useNavigation()
   const { data: entries = [], isLoading } = useLatestDiaries(3)
 
   const handleCardClick = () => {

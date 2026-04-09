@@ -77,6 +77,30 @@ describe("GuestbookEntry", () => {
         expect(content).not.toHaveClass("italic");
     });
 
+    it("엔트리 루트 컨테이너에 상하 대칭 패딩이 적용되어야 함", () => {
+        render(<GuestbookEntry entry={baseEntry} />);
+
+        // 하단 경계선 div를 찾음 (border-b 클래스 보유)
+        const content = screen.getByText("안녕하세요!");
+        const root = content.closest('div.border-b') as HTMLElement;
+        expect(root).not.toBeNull();
+
+        // 상단 패딩 (엔트리 간 간격 확보)
+        expect(root).toHaveClass('pt-3');
+        expect(root).toHaveClass('sm:pt-4');
+
+        // 하단 패딩 (기존 유지)
+        expect(root).toHaveClass('pb-3');
+        expect(root).toHaveClass('sm:pb-4');
+
+        // 첫 엔트리는 상단 패딩 제거
+        expect(root).toHaveClass('first:pt-0');
+
+        // 마지막 엔트리는 하단 패딩과 보더 제거
+        expect(root).toHaveClass('last:pb-0');
+        expect(root).toHaveClass('last:border-b-0');
+    });
+
     it("비밀글이고 열람 불가 시 옅은 회색 italic으로 표시해야 함", () => {
         const privateEntry = {
             ...baseEntry,

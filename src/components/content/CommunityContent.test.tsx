@@ -23,9 +23,10 @@ vi.mock('@/components/providers/ToastProvider', () => ({
   useToast: () => ({ success: vi.fn(), error: vi.fn() }),
 }))
 
-vi.mock('@/components/providers/TabContext', () => ({
-  useTab: () => ({
+vi.mock('@/components/providers/tab', () => ({
+  useCommunityView: () => ({
     communityPostId: null,
+    communityCategory: null,
     setCommunityPost: vi.fn(),
   }),
 }))
