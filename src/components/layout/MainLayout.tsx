@@ -15,7 +15,9 @@ export function MainLayout({ sidebar, children, showSidebarOnMobile = true }: Ma
       </aside>
 
       {/* 메인 콘텐츠 */}
-      <section className="flex-1 p-4 sm:p-6 md:p-8 lg:p-12">
+      {/* min-w-0: flex item의 기본 min-width: auto 때문에 자식 콘텐츠(긴 문자열/코드 등)가
+          부모 폭을 밀어내는 가로 오버플로우를 방지. */}
+      <section className="flex-1 min-w-0 p-4 sm:p-6 md:p-8 lg:p-12">
         {children}
       </section>
     </main>

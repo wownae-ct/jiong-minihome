@@ -49,6 +49,25 @@
   }
 }
 
+/* ── TipTap 에디터 긴 문자열 줄바꿈 ──
+   공백 없는 긴 문자열(URL, 영문 등)이 에디터 영역을 가로로 늘리지 않도록
+   overflow-wrap: anywhere로 강제 줄바꿈. prose 기본값(break-word)만으로는
+   특정 케이스에서 부족해 명시적으로 추가한다. */
+.ProseMirror {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.ProseMirror p,
+.ProseMirror h1,
+.ProseMirror h2,
+.ProseMirror h3,
+.ProseMirror h4,
+.ProseMirror li {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 /* ── TipTap 에디터 & prose 코드 블록 스타일 (Notion 스타일) ── */
 .prose pre,
 .ProseMirror pre {
