@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { Icon } from '@/components/ui/Icon'
-import { ImageLightbox } from '@/components/ui/ImageLightbox'
+import { useLightbox } from '@/hooks/useLightbox'
 import { useToast } from '@/components/providers/ToastProvider'
 import { LikeButton } from '@/components/common/LikeButton'
 import { PasswordModal } from '@/components/common/PasswordModal'
@@ -53,21 +53,8 @@ export function PostDetail({ post, onBack, onEdit, onDelete, onMemberClick }: Po
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [passwordAction, setPasswordAction] = useState<'edit' | 'delete'>('delete')
   const [isDeleting, setIsDeleting] = useState(false)
-  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null)
-  const [lightboxAlt, setLightboxAlt] = useState('')
   const proseRef = useRef<HTMLDivElement>(null)
-  const closedAtRef = useRef(0)
-
-  const openLightbox = useCallback((src: string, alt: string) => {
-    if (Date.now() - closedAtRef.current < 300) return
-    setLightboxSrc(src)
-    setLightboxAlt(alt)
-  }, [])
-
-  const closeLightbox = useCallback(() => {
-    closedAtRef.current = Date.now()
-    setLightboxSrc(null)
-  }, [])
+  const { openLightbox } = useLightbox()
 
   useEffect(() => {
     const container = proseRef.current
@@ -76,7 +63,7 @@ export function PostDetail({ post, onBack, onEdit, onDelete, onMemberClick }: Po
     const imgs = container.querySelectorAll('img')
     const handleClick = (e: Event) => {
       const img = e.currentTarget as HTMLImageElement
-      openLightbox(img.src, img.alt || '')
+      openLightbox({ src: img.src, alt: img.alt || '' })
     }
 
     imgs.forEach((img) => {
@@ -326,13 +313,6 @@ export function PostDetail({ post, onBack, onEdit, onDelete, onMemberClick }: Po
         title="게시글 삭제"
         message="정말 이 게시글을 삭제하시겠습니까?"
         isLoading={isDeleting}
-      />
-
-      <ImageLightbox
-        isOpen={!!lightboxSrc}
-        onClose={closeLightbox}
-        src={lightboxSrc || ''}
-        alt={lightboxAlt}
       />
     </>
   )

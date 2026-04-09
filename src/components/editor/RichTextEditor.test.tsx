@@ -320,6 +320,29 @@ describe('RichTextEditor', () => {
         screen.getByRole('button', { name: /글자 색상/i })
       ).toBeInTheDocument()
     })
+
+    it('색상 버튼을 누르면 16개의 preset 색상이 표시되어야 함', async () => {
+      const user = userEvent.setup()
+      render(<RichTextEditor {...defaultProps} />)
+
+      await user.click(screen.getByRole('button', { name: /글자 색상/i }))
+
+      // 각 색상은 aria-label을 가진 button으로 렌더링됨
+      const colorButtons = screen.getAllByRole('button', { name: /^색상:/ })
+      expect(colorButtons).toHaveLength(16)
+    })
+
+    it('모든 색상 버튼에 aria-label이 있어야 함', async () => {
+      const user = userEvent.setup()
+      render(<RichTextEditor {...defaultProps} />)
+
+      await user.click(screen.getByRole('button', { name: /글자 색상/i }))
+
+      const colorButtons = screen.getAllByRole('button', { name: /^색상:/ })
+      colorButtons.forEach((btn) => {
+        expect(btn).toHaveAttribute('aria-label')
+      })
+    })
   })
 
   describe('글자 크기', () => {

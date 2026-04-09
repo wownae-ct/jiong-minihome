@@ -1,8 +1,23 @@
+/* PhotoSwipe 라이트박스 스타일 */
+@import 'photoswipe/style.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+  /* 모바일 글씨 크기 축소: 루트 폰트 사이즈를 15px로 낮춰 rem 기반 텍스트를 전역 축소.
+     고정 px 기반 터치 타겟(w-10 h-10 등)은 영향 없음. 태블릿(md)부터는 16px로 복원. */
+  html {
+    font-size: 15px;
+  }
+
+  @media (min-width: 768px) {
+    html {
+      font-size: 16px;
+    }
+  }
+
   body {
     @apply font-sans;
   }

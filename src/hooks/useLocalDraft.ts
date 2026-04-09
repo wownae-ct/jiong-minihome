@@ -13,117 +13,227 @@ export interface DraftData {
   tags?: string[]
 }
 
-export interface SavedDraft {
-  id: string
-  data: DraftData
-  savedAt: string
-  portfolioId?: number // 수정 중인 포트폴리오 ID (새 글이면 undefined)
+/** 새 글 모드 슬롯 (최대 3개) */
+export interface DraftSlot {
+  index: number
+  data: DraftData | null
+  savedAt: string | null
 }
 
+/** 수정 모드 슬롯 (포트폴리오당 1개) */
+export interface EditDraft {
+  portfolioId: number
+  data: DraftData
+  savedAt: string
+}
+
+export interface StoredDrafts {
+  new: Array<{ data: DraftData; savedAt: string } | null>  // length = 3
+  edits: Record<string, { data: DraftData; savedAt: string }>  // key = portfolioId
+}
+
+export const MAX_NEW_SLOTS = 3
 const DRAFT_KEY = 'portfolio_drafts'
 
-function getDrafts(): SavedDraft[] {
-  if (typeof window === 'undefined') return []
-  try {
-    const stored = localStorage.getItem(DRAFT_KEY)
-    return stored ? JSON.parse(stored) : []
-  } catch {
-    return []
+// ────────────────────────────────────────────────────────────────────────────
+// Storage helpers
+// ────────────────────────────────────────────────────────────────────────────
+
+function emptyStorage(): StoredDrafts {
+  return {
+    new: Array(MAX_NEW_SLOTS).fill(null),
+    edits: {},
   }
 }
 
-function setDrafts(drafts: SavedDraft[]) {
-  if (typeof window === 'undefined') return
-  localStorage.setItem(DRAFT_KEY, JSON.stringify(drafts))
+function readStorage(): StoredDrafts {
+  if (typeof window === 'undefined') return emptyStorage()
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY)
+    if (!raw) return emptyStorage()
+    const parsed = JSON.parse(raw)
+
+    // Legacy format: array of SavedDraft ({ id, data, savedAt, portfolioId? })
+    if (Array.isArray(parsed)) {
+      return migrateLegacy(parsed)
+    }
+
+    // New format
+    if (parsed && typeof parsed === 'object' && 'new' in parsed && 'edits' in parsed) {
+      const storage = parsed as StoredDrafts
+      // Ensure new array is length 3
+      const newSlots = Array.isArray(storage.new) ? storage.new : []
+      while (newSlots.length < MAX_NEW_SLOTS) newSlots.push(null)
+      return {
+        new: newSlots.slice(0, MAX_NEW_SLOTS),
+        edits: storage.edits ?? {},
+      }
+    }
+
+    // Unknown format — discard
+    return emptyStorage()
+  } catch {
+    return emptyStorage()
+  }
 }
 
-// 현재 작성 중인 임시 저장 (새 글 or 수정 중)
-export function useLocalDraft(portfolioId?: number) {
-  const [draft, setDraft] = useState<SavedDraft | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+function writeStorage(data: StoredDrafts) {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(data))
+  } catch {
+    // Storage full or disabled — silently ignore
+  }
+}
 
-  // 임시 저장 데이터 로드
+interface LegacyDraft {
+  id: string
+  data: DraftData
+  savedAt: string
+  portfolioId?: number
+}
+
+function migrateLegacy(legacy: unknown[]): StoredDrafts {
+  const storage = emptyStorage()
+  for (const item of legacy) {
+    if (!item || typeof item !== 'object') continue
+    const draft = item as LegacyDraft
+    if (!draft.data || !draft.savedAt) continue
+
+    if (typeof draft.portfolioId === 'number') {
+      storage.edits[String(draft.portfolioId)] = {
+        data: draft.data,
+        savedAt: draft.savedAt,
+      }
+    } else {
+      // 새 글 드래프트는 slot 0으로 마이그레이션
+      if (storage.new[0] === null) {
+        storage.new[0] = { data: draft.data, savedAt: draft.savedAt }
+      }
+    }
+  }
+  return storage
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Global listeners (for cross-hook sync within same document)
+// ────────────────────────────────────────────────────────────────────────────
+
+type Listener = () => void
+const listeners = new Set<Listener>()
+
+function notify() {
+  listeners.forEach((fn) => fn())
+}
+
+function subscribe(fn: Listener): () => void {
+  listeners.add(fn)
+  return () => {
+    listeners.delete(fn)
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// useDraftSlots — 새 글 작성용 3개 슬롯
+// ────────────────────────────────────────────────────────────────────────────
+
+export function useDraftSlots() {
+  const [storage, setStorage] = useState<StoredDrafts>(() => readStorage())
+
   useEffect(() => {
-    const drafts = getDrafts()
-    const found = drafts.find((d) =>
-      portfolioId ? d.portfolioId === portfolioId : !d.portfolioId
-    )
-    setDraft(found || null)
-    setIsLoading(false)
-  }, [portfolioId])
+    const refresh = () => setStorage(readStorage())
+    return subscribe(refresh)
+  }, [])
 
-  // 임시 저장
-  const saveDraft = useCallback(
+  const slots: DraftSlot[] = storage.new.map((entry, index) => ({
+    index,
+    data: entry?.data ?? null,
+    savedAt: entry?.savedAt ?? null,
+  }))
+
+  const hasAnyDraft = slots.some((s) => s.data !== null)
+
+  const saveToSlot = useCallback((index: number, data: DraftData) => {
+    if (index < 0 || index >= MAX_NEW_SLOTS) return
+    const current = readStorage()
+    current.new[index] = { data, savedAt: new Date().toISOString() }
+    writeStorage(current)
+    setStorage(current)
+    notify()
+  }, [])
+
+  const deleteSlot = useCallback((index: number) => {
+    if (index < 0 || index >= MAX_NEW_SLOTS) return
+    const current = readStorage()
+    current.new[index] = null
+    writeStorage(current)
+    setStorage(current)
+    notify()
+  }, [])
+
+  const findEmptySlotIndex = useCallback((): number => {
+    for (let i = 0; i < MAX_NEW_SLOTS; i++) {
+      if (storage.new[i] === null) return i
+    }
+    return -1
+  }, [storage])
+
+  return {
+    slots,
+    hasAnyDraft,
+    saveToSlot,
+    deleteSlot,
+    findEmptySlotIndex,
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// useEditDraft — 수정 모드 단일 슬롯 (portfolioId별)
+// ────────────────────────────────────────────────────────────────────────────
+
+export function useEditDraft(portfolioId: number | undefined) {
+  const [storage, setStorage] = useState<StoredDrafts>(() => readStorage())
+
+  useEffect(() => {
+    const refresh = () => setStorage(readStorage())
+    return subscribe(refresh)
+  }, [])
+
+  const key = portfolioId !== undefined ? String(portfolioId) : ''
+  const entry = key ? storage.edits[key] : undefined
+  const draft: EditDraft | null =
+    entry && portfolioId !== undefined
+      ? { portfolioId, data: entry.data, savedAt: entry.savedAt }
+      : null
+
+  const save = useCallback(
     (data: DraftData) => {
-      const drafts = getDrafts()
-      const draftId = portfolioId ? `edit-${portfolioId}` : 'new'
-
-      // 기존 임시 저장 제거
-      const filtered = drafts.filter((d) =>
-        portfolioId ? d.portfolioId !== portfolioId : d.portfolioId !== undefined
-      )
-
-      const newDraft: SavedDraft = {
-        id: draftId,
+      if (portfolioId === undefined) return
+      const current = readStorage()
+      current.edits[String(portfolioId)] = {
         data,
         savedAt: new Date().toISOString(),
-        portfolioId,
       }
-
-      filtered.push(newDraft)
-      setDrafts(filtered)
-      setDraft(newDraft)
-
-      return newDraft
+      writeStorage(current)
+      setStorage(current)
+      notify()
     },
     [portfolioId]
   )
 
-  // 임시 저장 삭제
-  const clearDraft = useCallback(() => {
-    const drafts = getDrafts()
-    const filtered = drafts.filter((d) =>
-      portfolioId ? d.portfolioId !== portfolioId : d.portfolioId !== undefined
-    )
-    setDrafts(filtered)
-    setDraft(null)
+  const clear = useCallback(() => {
+    if (portfolioId === undefined) return
+    const current = readStorage()
+    delete current.edits[String(portfolioId)]
+    writeStorage(current)
+    setStorage(current)
+    notify()
   }, [portfolioId])
 
   return {
     draft,
-    isLoading,
-    saveDraft,
-    clearDraft,
-    hasDraft: !!draft,
-  }
-}
-
-// 모든 임시 저장 목록 조회
-export function useAllDrafts() {
-  const [drafts, setDraftsState] = useState<SavedDraft[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    setDraftsState(getDrafts())
-    setIsLoading(false)
-  }, [])
-
-  const deleteDraft = useCallback((draftId: string) => {
-    const currentDrafts = getDrafts()
-    const filtered = currentDrafts.filter((d) => d.id !== draftId)
-    setDrafts(filtered)
-    setDraftsState(filtered)
-  }, [])
-
-  const clearAllDrafts = useCallback(() => {
-    setDrafts([])
-    setDraftsState([])
-  }, [])
-
-  return {
-    drafts,
-    isLoading,
-    deleteDraft,
-    clearAllDrafts,
+    hasDraft: draft !== null,
+    save,
+    clear,
   }
 }

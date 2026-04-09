@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { Icon } from "@/components/ui/Icon";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { ImageLightbox } from "@/components/ui/ImageLightbox";
+import { useLightbox } from "@/hooks/useLightbox";
 import { Portfolio, useDeletePortfolio } from "@/hooks/usePortfolios";
 import { useToast } from "@/components/providers/ToastProvider";
 import { motion } from "framer-motion";
@@ -28,24 +28,11 @@ export function PortfolioDetail({
     const { data: session } = useSession();
     const isAdmin = session?.user?.role === "admin";
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-    const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
-    const [lightboxAlt, setLightboxAlt] = useState('');
     const proseRef = useRef<HTMLDivElement>(null);
-    const closedAtRef = useRef(0);
+    const { openLightbox } = useLightbox();
     const deleteMutation = useDeletePortfolio();
     const toast = useToast();
     const images = parsePortfolioImages(project.image);
-
-    const openLightbox = useCallback((src: string, alt: string) => {
-        if (Date.now() - closedAtRef.current < 300) return;
-        setLightboxSrc(src);
-        setLightboxAlt(alt);
-    }, []);
-
-    const closeLightbox = useCallback(() => {
-        closedAtRef.current = Date.now();
-        setLightboxSrc(null);
-    }, []);
 
     useEffect(() => {
         const container = proseRef.current;
@@ -54,7 +41,7 @@ export function PortfolioDetail({
         const imgs = container.querySelectorAll('img');
         const handleClick = (e: Event) => {
             const img = e.currentTarget as HTMLImageElement;
-            openLightbox(img.src, img.alt || '');
+            openLightbox({ src: img.src, alt: img.alt || '' });
         };
 
         imgs.forEach((img) => {
@@ -134,7 +121,7 @@ export function PortfolioDetail({
                             key={idx}
                             type="button"
                             className="aspect-video bg-gradient-to-br from-primary/20 to-blue-600/20 overflow-hidden cursor-pointer touch-manipulation"
-                            onClick={() => openLightbox(img, `${project.title} ${idx + 1}`)}
+                            onClick={() => openLightbox({ src: img, alt: `${project.title} ${idx + 1}` })}
                         >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
@@ -279,13 +266,6 @@ export function PortfolioDetail({
                     </div>
                 </div>
             )}
-
-            <ImageLightbox
-                isOpen={!!lightboxSrc}
-                onClose={closeLightbox}
-                src={lightboxSrc || ''}
-                alt={lightboxAlt}
-            />
         </motion.div>
     );
 }

@@ -1,35 +1,31 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useRef, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { Icon } from "@/components/ui/Icon";
-import { ImageLightbox } from "@/components/ui/ImageLightbox";
 import { WriteButton } from "@/components/ui/WriteButton";
 import { ProfileEditModal } from "@/components/admin/ProfileEditModal";
 import { useProfile } from "@/components/providers/ProfileContext";
 import { useAdminStatus } from "@/hooks/useAdminStatus";
+import { useLightbox } from "@/hooks/useLightbox";
 
 export function ProfileCard() {
     const { data: session } = useSession();
     const { profile, isLoading, refreshProfile } = useProfile();
     const { status: adminStatus } = useAdminStatus();
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [isLightboxOpen, setIsLightboxOpen] = useState(false);
-    const closedAtRef = useRef(0);
+    const { openLightbox } = useLightbox();
 
     const isAdmin = session?.user?.role === "admin";
 
     const openProfileLightbox = useCallback(() => {
         if (isLoading) return;
-        if (Date.now() - closedAtRef.current < 300) return;
-        setIsLightboxOpen(true);
-    }, [isLoading]);
-
-    const closeProfileLightbox = useCallback(() => {
-        closedAtRef.current = Date.now();
-        setIsLightboxOpen(false);
-    }, []);
+        openLightbox({
+            src: profile.imageUrl,
+            alt: `Profile of ${profile.name}`,
+        });
+    }, [isLoading, openLightbox, profile.imageUrl, profile.name]);
 
     const statusColors = {
         online: "bg-green-500",
@@ -175,13 +171,6 @@ export function ProfileCard() {
                 onClose={() => setIsEditModalOpen(false)}
                 onSuccess={handleEditSuccess}
                 initialData={profile}
-            />
-
-            <ImageLightbox
-                isOpen={isLightboxOpen}
-                onClose={closeProfileLightbox}
-                src={profile.imageUrl}
-                alt={`Profile of ${profile.name}`}
             />
         </div>
     );

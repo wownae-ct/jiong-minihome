@@ -22,7 +22,7 @@ function ToolbarButton({ onClick, isActive, disabled, title, children }: Toolbar
       aria-label={title}
       aria-pressed={isActive}
       className={`
-        p-1.5 rounded transition-colors
+        p-1.5 sm:p-1 rounded transition-colors
         ${isActive
           ? 'bg-primary/20 text-primary'
           : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
@@ -36,12 +36,31 @@ function ToolbarButton({ onClick, isActive, disabled, title, children }: Toolbar
 }
 
 function ToolbarDivider() {
-  return <div className="w-px h-6 bg-slate-300 dark:bg-slate-600 mx-1 self-center" />
+  return <div className="w-px h-5 bg-slate-300 dark:bg-slate-600 mx-0.5 self-center" />
 }
 
-const PRESET_COLORS = [
-  '#000000', '#374151', '#dc2626', '#ea580c', '#d97706',
-  '#16a34a', '#2563eb', '#7c3aed', '#db2777', '#64748b',
+interface ColorPreset {
+  value: string
+  label: string
+}
+
+const PRESET_COLORS: ColorPreset[] = [
+  { value: '#000000', label: '검정' },
+  { value: '#374151', label: '진회색' },
+  { value: '#64748b', label: '회색' },
+  { value: '#ffffff', label: '흰색' },
+  { value: '#dc2626', label: '빨강' },
+  { value: '#ea580c', label: '주황' },
+  { value: '#d97706', label: '황토' },
+  { value: '#eab308', label: '노랑' },
+  { value: '#84cc16', label: '라임' },
+  { value: '#16a34a', label: '초록' },
+  { value: '#14b8a6', label: '청록' },
+  { value: '#0ea5e9', label: '하늘' },
+  { value: '#2563eb', label: '파랑' },
+  { value: '#7c3aed', label: '보라' },
+  { value: '#db2777', label: '핑크' },
+  { value: '#92400e', label: '갈색' },
 ]
 
 const FONT_SIZES = [
@@ -189,16 +208,17 @@ export function EditorToolbar({
           <Icon name="format_color_text" size="sm" />
         </ToolbarButton>
         {showColorPicker && (
-          <div className="absolute top-full left-0 mt-1 p-2 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 z-50">
-            <div className="grid grid-cols-5 gap-1 mb-2">
+          <div className="absolute top-full left-0 mt-1 p-3 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 z-50">
+            <div className="grid grid-cols-4 gap-2 mb-3">
               {PRESET_COLORS.map((color) => (
                 <button
-                  key={color}
+                  key={color.value}
                   type="button"
-                  onClick={() => handleSetColor(color)}
-                  className="w-6 h-6 rounded border border-slate-300 dark:border-slate-600 hover:scale-110 transition-transform"
-                  style={{ backgroundColor: color }}
-                  title={color}
+                  onClick={() => handleSetColor(color.value)}
+                  className="w-8 h-8 rounded-md border border-slate-300 dark:border-slate-600 hover:scale-110 transition-transform shadow-sm"
+                  style={{ backgroundColor: color.value }}
+                  title={color.label}
+                  aria-label={`색상: ${color.label}`}
                 />
               ))}
             </div>
@@ -207,6 +227,7 @@ export function EditorToolbar({
               onChange={(e) => handleSetColor(e.target.value)}
               className="w-full h-7 cursor-pointer rounded"
               title="커스텀 색상"
+              aria-label="커스텀 색상"
             />
           </div>
         )}

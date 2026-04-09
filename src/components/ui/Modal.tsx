@@ -7,7 +7,7 @@ import { Icon } from './Icon'
 interface ModalProps {
   isOpen: boolean
   onClose: () => void
-  title?: string
+  title?: ReactNode
   children: ReactNode
   size?: 'sm' | 'md' | 'lg' | 'xl' | '70vw'
   showCloseButton?: boolean
@@ -74,9 +74,9 @@ export function Modal({
         {(title || showCloseButton) && (
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700">
             {title && (
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+              <div className="text-lg font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2 min-w-0">
                 {title}
-              </h2>
+              </div>
             )}
             {showCloseButton && (
               <button
