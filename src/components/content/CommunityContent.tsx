@@ -165,7 +165,7 @@ export function CommunityContent() {
               <Icon name="arrow_back" />
             </button>
           )}
-          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+          <h2 className="text-lg sm:text-2xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
             <span className="text-primary">커뮤니티</span>
             <span className="text-slate-400 dark:text-slate-500">
               {viewMode === 'list' && 'Community'}
@@ -181,13 +181,13 @@ export function CommunityContent() {
       {/* 목록 뷰 */}
       {viewMode === 'list' && (
         <>
-          <div className="flex items-center justify-between mb-6 border-b border-slate-200 dark:border-slate-700 pb-4">
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+          <div className="flex items-center justify-between mb-4 sm:mb-6 border-b border-slate-200 dark:border-slate-700 pb-3 sm:pb-4 gap-2">
+            <div className="flex gap-1 sm:gap-2 overflow-x-auto scrollbar-hide">
               {categories.map((category) => (
                 <button
                   key={category.id}
                   onClick={() => setActiveCategory(category.id)}
-                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap shrink-0 ${
+                  className={`px-2.5 py-1 text-xs sm:px-4 sm:py-2 sm:text-sm font-medium rounded-lg transition-colors whitespace-nowrap shrink-0 ${
                     activeCategory === category.id
                       ? 'bg-primary text-white'
                       : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
@@ -199,10 +199,11 @@ export function CommunityContent() {
             </div>
             <button
               onClick={handleWriteClick}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-br from-primary to-blue-600 text-white rounded-xl hover:shadow-lg hover:shadow-primary/30 transition-all duration-200 group whitespace-nowrap shrink-0"
+              aria-label="글쓰기"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 sm:px-4 sm:py-2 bg-gradient-to-br from-primary to-blue-600 text-white rounded-lg sm:rounded-xl hover:shadow-lg hover:shadow-primary/30 transition-all duration-200 group whitespace-nowrap shrink-0 text-xs sm:text-sm"
             >
               <Icon name="edit_note" className="group-hover:rotate-12 transition-transform duration-200" size="sm" />
-              글쓰기
+              <span className="hidden sm:inline">글쓰기</span>
             </button>
           </div>
           <PostSearchBar onSearch={handleSearch} className="mb-4" />

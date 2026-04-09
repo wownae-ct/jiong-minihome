@@ -22,7 +22,7 @@ function ToolbarButton({ onClick, isActive, disabled, title, children }: Toolbar
       aria-label={title}
       aria-pressed={isActive}
       className={`
-        p-1.5 sm:p-1 rounded transition-colors
+        p-1 sm:p-0.5 rounded transition-colors
         ${isActive
           ? 'bg-primary/20 text-primary'
           : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
@@ -36,7 +36,7 @@ function ToolbarButton({ onClick, isActive, disabled, title, children }: Toolbar
 }
 
 function ToolbarDivider() {
-  return <div className="w-px h-5 bg-slate-300 dark:bg-slate-600 mx-0.5 self-center" />
+  return <div className="w-px h-4 bg-slate-300 dark:bg-slate-600 mx-0.5 self-center" />
 }
 
 interface ColorPreset {
@@ -140,7 +140,7 @@ export function EditorToolbar({
   const currentFontSize = editor.getAttributes('textStyle')?.fontSize || ''
 
   return (
-    <div className="flex flex-wrap items-center gap-1 p-2 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+    <div className="flex flex-wrap items-center gap-0.5 p-1.5 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
       {/* 헤딩 */}
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
@@ -208,14 +208,19 @@ export function EditorToolbar({
           <Icon name="format_color_text" size="sm" />
         </ToolbarButton>
         {showColorPicker && (
-          <div className="absolute top-full left-0 mt-1 p-3 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 z-50">
-            <div className="grid grid-cols-4 gap-2 mb-3">
+          <div className="absolute top-full left-0 mt-1 p-2.5 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 z-50 w-44">
+            {/*
+              flex-wrap + 고정 w-44: grid-cols-4의 minmax(0,1fr) 함정 회피.
+              절대 위치 dropdown의 containing block width가 결정되지 않아
+              grid columns가 0으로 축소되며 자식 버튼이 겹치는 버그 차단.
+            */}
+            <div className="flex flex-wrap gap-1.5 mb-2">
               {PRESET_COLORS.map((color) => (
                 <button
                   key={color.value}
                   type="button"
                   onClick={() => handleSetColor(color.value)}
-                  className="w-8 h-8 rounded-md border border-slate-300 dark:border-slate-600 hover:scale-110 transition-transform shadow-sm"
+                  className="w-5 h-5 rounded border border-slate-300 dark:border-slate-600 hover:scale-125 transition-transform shadow-sm shrink-0"
                   style={{ backgroundColor: color.value }}
                   title={color.label}
                   aria-label={`색상: ${color.label}`}
@@ -225,7 +230,7 @@ export function EditorToolbar({
             <input
               type="color"
               onChange={(e) => handleSetColor(e.target.value)}
-              className="w-full h-7 cursor-pointer rounded"
+              className="w-full h-6 cursor-pointer rounded"
               title="커스텀 색상"
               aria-label="커스텀 색상"
             />
@@ -238,7 +243,7 @@ export function EditorToolbar({
         title="글자 크기"
         value={currentFontSize}
         onChange={(e) => handleSetFontSize(e.target.value)}
-        className="h-7 px-1 text-xs rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary/50"
+        className="h-6 px-1 text-[11px] rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary/50"
       >
         <option value="">기본</option>
         {FONT_SIZES.map((size) => (

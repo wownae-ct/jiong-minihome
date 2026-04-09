@@ -150,12 +150,15 @@ export function PortfolioContent() {
       {/* 관리자 버튼 */}
       {isAdmin && (
         <div className="absolute top-4 right-4 flex gap-2">
+          {/* 태그 관리: WriteButton과 동일 프레임 (w-10 h-10 + rounded-xl + inline-flex center)
+              → Material Symbols font-based icon의 baseline 비대칭으로 인한 치우침 방지 */}
           <button
             onClick={() => setIsTagManagementOpen(true)}
             title="태그 관리"
-            className="p-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg transition-colors"
+            aria-label="태그 관리"
+            className="inline-flex items-center justify-center w-10 h-10 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-xl transition-colors shrink-0"
           >
-            <Icon name="label" size="md" className="text-slate-600 dark:text-slate-300" />
+            <Icon name="label" size="sm" className="text-slate-600 dark:text-slate-300" />
           </button>
           <WriteButton
             onClick={() => handleOpenWriteModal()}
@@ -164,7 +167,7 @@ export function PortfolioContent() {
         </div>
       )}
 
-      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-2">
+      <h2 className="text-lg sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-2">
         <span className="text-primary">포트폴리오</span>
         <span className="text-slate-400 dark:text-slate-500">Portfolio</span>
       </h2>

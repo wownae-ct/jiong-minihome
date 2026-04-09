@@ -182,7 +182,7 @@ export function PostDetail({ post, onBack, onEdit, onDelete, onMemberClick }: Po
               <Icon name="lock" size="sm" className="text-slate-400 ml-1" />
             )}
           </div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
+          <h1 className="text-lg sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
             {post.title}
           </h1>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">

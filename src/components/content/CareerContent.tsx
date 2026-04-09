@@ -37,7 +37,7 @@ export function CareerContent() {
         />
       )}
 
-      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-2">
+      <h2 className="text-lg sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-2">
         <span className="text-primary">경력</span>
         <span className="text-slate-400 dark:text-slate-500">Career</span>
       </h2>

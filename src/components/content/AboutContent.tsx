@@ -102,7 +102,7 @@ export function AboutContent() {
 
       {/* 핵심 가치 */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 sm:p-6 md:p-8 border border-slate-200 dark:border-slate-700">
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-2">
+        <h2 className="text-lg sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-2">
           <Icon name="favorite" className="text-primary" />
           핵심 가치
         </h2>
@@ -128,7 +128,7 @@ export function AboutContent() {
 
       {/* 기술 스택 */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 sm:p-6 md:p-8 border border-slate-200 dark:border-slate-700">
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-2">
+        <h2 className="text-lg sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-2">
           <Icon name="code" className="text-primary" />
           기술 스택
         </h2>
@@ -155,7 +155,7 @@ export function AboutContent() {
 
       {/* 연락처 */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 sm:p-6 md:p-8 border border-slate-200 dark:border-slate-700">
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-2">
+        <h2 className="text-lg sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-2">
           <Icon name="mail" className="text-primary" />
           연락처
         </h2>
