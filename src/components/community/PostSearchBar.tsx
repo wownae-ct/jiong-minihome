@@ -39,11 +39,11 @@ export function PostSearchBar({
   }
 
   return (
-    <div className={`flex flex-wrap sm:flex-nowrap gap-2 ${className}`}>
+    <div className={`flex flex-nowrap items-center gap-2 ${className}`}>
       <select
         value={searchType}
         onChange={(e) => setSearchType(e.target.value as SearchType)}
-        className="px-3 py-2 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary shrink-0"
+        className="px-2 py-1.5 sm:px-3 sm:py-2 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg text-xs sm:text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary shrink-0"
       >
         {SEARCH_TYPE_OPTIONS.map((option) => (
           <option key={option.value} value={option.value}>
@@ -58,13 +58,13 @@ export function PostSearchBar({
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="검색어를 입력하세요"
-          className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+          className="w-full px-3 py-1.5 sm:px-4 sm:py-2 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
         />
       </div>
       <button
         onClick={handleSearch}
         aria-label="검색"
-        className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-1 text-sm font-medium whitespace-nowrap shrink-0"
+        className="px-3 py-1.5 sm:px-4 sm:py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-1 text-xs sm:text-sm font-medium whitespace-nowrap shrink-0"
       >
         <Icon name="search" size="sm" />
         검색

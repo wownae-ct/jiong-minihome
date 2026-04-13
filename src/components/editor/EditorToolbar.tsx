@@ -147,21 +147,21 @@ export function EditorToolbar({
         isActive={editor.isActive('heading', { level: 1 })}
         title="제목 1 (H1)"
       >
-        <Icon name="format_h1" size="sm" />
+        <Icon name="format_h1" size="xs" />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
         isActive={editor.isActive('heading', { level: 2 })}
         title="제목 2 (H2)"
       >
-        <Icon name="format_h2" size="sm" />
+        <Icon name="format_h2" size="xs" />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
         isActive={editor.isActive('heading', { level: 3 })}
         title="제목 3 (H3)"
       >
-        <Icon name="format_h3" size="sm" />
+        <Icon name="format_h3" size="xs" />
       </ToolbarButton>
 
       <ToolbarDivider />
@@ -172,28 +172,28 @@ export function EditorToolbar({
         isActive={editor.isActive('bold')}
         title="굵게 (Ctrl+B)"
       >
-        <Icon name="format_bold" size="sm" />
+        <Icon name="format_bold" size="xs" />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleItalic().run()}
         isActive={editor.isActive('italic')}
         title="기울임 (Ctrl+I)"
       >
-        <Icon name="format_italic" size="sm" />
+        <Icon name="format_italic" size="xs" />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleUnderline().run()}
         isActive={editor.isActive('underline')}
         title="밑줄 (Ctrl+U)"
       >
-        <Icon name="format_underlined" size="sm" />
+        <Icon name="format_underlined" size="xs" />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleStrike().run()}
         isActive={editor.isActive('strike')}
         title="취소선"
       >
-        <Icon name="strikethrough_s" size="sm" />
+        <Icon name="strikethrough_s" size="xs" />
       </ToolbarButton>
 
       <ToolbarDivider />
@@ -205,7 +205,7 @@ export function EditorToolbar({
           isActive={showColorPicker}
           title="글자 색상"
         >
-          <Icon name="format_color_text" size="sm" />
+          <Icon name="format_color_text" size="xs" />
         </ToolbarButton>
         {showColorPicker && (
           <div className="absolute top-full left-0 mt-1 p-2.5 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 z-50 w-44">
@@ -261,14 +261,14 @@ export function EditorToolbar({
         isActive={editor.isActive('bulletList')}
         title="글머리 기호 목록"
       >
-        <Icon name="format_list_bulleted" size="sm" />
+        <Icon name="format_list_bulleted" size="xs" />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleOrderedList().run()}
         isActive={editor.isActive('orderedList')}
         title="번호 매기기 목록"
       >
-        <Icon name="format_list_numbered" size="sm" />
+        <Icon name="format_list_numbered" size="xs" />
       </ToolbarButton>
 
       <ToolbarDivider />
@@ -279,27 +279,27 @@ export function EditorToolbar({
         isActive={editor.isActive('blockquote')}
         title="인용문"
       >
-        <Icon name="format_quote" size="sm" />
+        <Icon name="format_quote" size="xs" />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleCodeBlock().run()}
         isActive={editor.isActive('codeBlock')}
         title="코드 블록"
       >
-        <Icon name="code" size="sm" />
+        <Icon name="code" size="xs" />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().setHorizontalRule().run()}
         title="구분선"
       >
-        <Icon name="horizontal_rule" size="sm" />
+        <Icon name="horizontal_rule" size="xs" />
       </ToolbarButton>
 
       <ToolbarDivider />
 
       {/* 미디어 */}
       <ToolbarButton onClick={() => fileInputRef.current?.click()} title="이미지 삽입">
-        <Icon name="image" size="sm" />
+        <Icon name="image" size="xs" />
       </ToolbarButton>
       <input
         ref={fileInputRef}
@@ -313,7 +313,7 @@ export function EditorToolbar({
       {onVideoUpload && (
         <>
           <ToolbarButton onClick={() => videoInputRef?.current?.click()} title="동영상 삽입">
-            <Icon name="videocam" size="sm" />
+            <Icon name="videocam" size="xs" />
           </ToolbarButton>
           <input
             ref={videoInputRef}
@@ -332,7 +332,7 @@ export function EditorToolbar({
           isActive={showYoutubeInput}
           title="YouTube 임베드"
         >
-          <Icon name="smart_display" size="sm" />
+          <Icon name="smart_display" size="xs" />
         </ToolbarButton>
         {showYoutubeInput && (
           <div className="absolute top-full left-0 mt-1 p-2 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 z-50 w-72">
@@ -367,14 +367,14 @@ export function EditorToolbar({
         disabled={!editor.can().undo()}
         title="실행 취소 (Ctrl+Z)"
       >
-        <Icon name="undo" size="sm" />
+        <Icon name="undo" size="xs" />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().redo().run()}
         disabled={!editor.can().redo()}
         title="다시 실행 (Ctrl+Y)"
       >
-        <Icon name="redo" size="sm" />
+        <Icon name="redo" size="xs" />
       </ToolbarButton>
     </div>
   )

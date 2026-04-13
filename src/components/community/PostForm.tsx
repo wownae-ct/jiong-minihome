@@ -126,7 +126,7 @@ export function PostForm({ initialData, guestPassword, onCancel, onSuccess }: Po
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {/* 비로그인 시 닉네임/비밀번호 입력 */}
       {isGuest && !initialData && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 sm:gap-4 sm:p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600">
           <Input
             label="닉네임"
             placeholder="닉네임을 입력하세요"

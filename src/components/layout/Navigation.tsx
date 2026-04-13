@@ -26,7 +26,7 @@ export function Navigation() {
   const { activeTab, setActiveTab } = useNavigation();
 
   return (
-    <nav className="flex flex-wrap gap-1 items-end relative z-10 overflow-x-auto pb-1 -mb-1 scrollbar-hide">
+    <nav className="flex flex-wrap gap-0.5 sm:gap-1 items-end relative z-10 overflow-x-auto pb-1 -mb-1 scrollbar-hide">
       {navItems.map((item) => {
         const isActive = item.id === activeTab;
 
@@ -35,7 +35,7 @@ export function Navigation() {
             key={item.id}
             onClick={() => setActiveTab(item.id)}
             className={`
-              relative px-4 md:px-6 py-2 md:py-3 rounded-t-xl transition-all whitespace-nowrap cursor-pointer
+              relative px-2.5 sm:px-4 md:px-6 py-1.5 sm:py-2 md:py-3 text-xs sm:text-sm md:text-base rounded-t-xl transition-all whitespace-nowrap cursor-pointer
               ${isActive
                 ? 'bg-white dark:bg-surface-dark border-x border-t border-slate-200 dark:border-slate-700 text-primary font-bold shadow-[0_-2px_10px_rgba(0,0,0,0.02)]'
                 : 'bg-slate-200/50 dark:bg-slate-800/50 hover:bg-white dark:hover:bg-slate-800 border-x border-t border-transparent hover:border-slate-200 dark:hover:border-slate-700 text-slate-600 dark:text-slate-400'
