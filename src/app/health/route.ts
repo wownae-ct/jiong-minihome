@@ -2,8 +2,7 @@ export const runtime = 'nodejs'
 
 export async function GET() {
   return Response.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-  })
+    status: 'broken',
+    message: 'forced failure for phase8 rollback test',
+  }, { status: 500 })
 }
