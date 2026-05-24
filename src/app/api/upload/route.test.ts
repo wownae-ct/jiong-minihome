@@ -16,7 +16,18 @@ vi.mock('@/lib/s3', () => ({
   ),
 }))
 
+// Mock HEIC 변환 (실제 변환은 heic.test.ts에서 검증, 여기선 라우트 흐름만 검증)
+vi.mock('@/lib/heic', () => ({
+  isHeicFile: vi.fn(
+    (type: string, name: string) =>
+      type === 'image/heic' || type === 'image/heif' || /\.(heic|heif)$/i.test(name)
+  ),
+  convertHeicToJpeg: vi.fn().mockResolvedValue(Buffer.from('converted-jpeg')),
+}))
+
 import { auth } from '@/lib/auth'
+import { uploadToS3 } from '@/lib/s3'
+import { convertHeicToJpeg } from '@/lib/heic'
 
 const mockAuth = vi.mocked(auth)
 
@@ -201,6 +212,75 @@ describe('/api/upload', () => {
       const data = await response.json()
       expect(data.url).toBeDefined()
     }
+  })
+
+  describe('HEIC(아이폰) 이미지 업로드', () => {
+    it('image/heic 사진을 업로드하면 JPEG로 변환되어 성공', async () => {
+      mockAuth.mockResolvedValue({
+        user: { id: '2', role: 'user' },
+        expires: new Date().toISOString(),
+      })
+
+      const formData = new FormData()
+      formData.append('file', new Blob(['heic-bytes'], { type: 'image/heic' }), 'IMG_0001.heic')
+      formData.append('type', 'post')
+
+      const request = new NextRequest('http://localhost:3000/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const response = await POST(request)
+      expect(response.status).toBe(201)
+
+      const data = await response.json()
+      expect(data.url).toMatch(/\.jpg$/)
+      expect(convertHeicToJpeg).toHaveBeenCalledOnce()
+      // 변환된 버퍼가 image/jpeg 콘텐츠 타입으로 업로드되어야 함
+      expect(uploadToS3).toHaveBeenCalledWith(expect.any(Buffer), expect.any(String), 'image/jpeg')
+    })
+
+    it('type이 비어있어도 .heic 확장자면 변환되어 성공', async () => {
+      mockAuth.mockResolvedValue({
+        user: { id: '1', role: 'admin' },
+        expires: new Date().toISOString(),
+      })
+
+      const formData = new FormData()
+      formData.append('file', new Blob(['heic-bytes'], { type: '' }), 'photo.heic')
+
+      const request = new NextRequest('http://localhost:3000/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const response = await POST(request)
+      expect(response.status).toBe(201)
+
+      const data = await response.json()
+      expect(data.url).toMatch(/\.jpg$/)
+      expect(convertHeicToJpeg).toHaveBeenCalledOnce()
+    })
+
+    it('HEIC 원본이 5MB를 초과하면 400 반환 (변환 전 차단)', async () => {
+      mockAuth.mockResolvedValue({
+        user: { id: '1', role: 'admin' },
+        expires: new Date().toISOString(),
+      })
+
+      const largeContent = new Uint8Array(6 * 1024 * 1024)
+      const formData = new FormData()
+      formData.append('file', new Blob([largeContent], { type: 'image/heic' }), 'large.heic')
+
+      const request = new NextRequest('http://localhost:3000/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const response = await POST(request)
+      expect(response.status).toBe(400)
+      expect(convertHeicToJpeg).not.toHaveBeenCalled()
+    })
   })
 
   describe('BGM 오디오 업로드', () => {

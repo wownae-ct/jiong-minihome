@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { randomUUID } from 'crypto'
 import { requireAuth } from '@/lib/api/helpers'
 import { uploadToS3 } from '@/lib/s3'
+import { isHeicFile, convertHeicToJpeg } from '@/lib/heic'
 
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
 const MAX_IMAGE_FILE_SIZE = 5 * 1024 * 1024 // 5MB
@@ -48,7 +49,10 @@ export async function POST(request: NextRequest) {
     const maxSize = isAudioUpload ? MAX_AUDIO_FILE_SIZE : MAX_IMAGE_FILE_SIZE
     const extensionMap = isAudioUpload ? AUDIO_EXTENSION_MAP : IMAGE_EXTENSION_MAP
 
-    if (!allowedTypes.includes(file.type)) {
+    // 아이폰 등 모바일 기본 사진 형식(HEIC/HEIF)은 변환 대상이므로 형식 검증을 통과시킨다.
+    const isHeic = !isAudioUpload && isHeicFile(file.type, file.name)
+
+    if (!isHeic && !allowedTypes.includes(file.type)) {
       return NextResponse.json(
         { error: isAudioUpload
           ? '오디오 파일만 업로드할 수 있습니다. (mp3, wav, ogg, m4a)'
@@ -57,6 +61,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // 크기 검증은 변환 전 원본 기준으로 수행한다.
     if (file.size > maxSize) {
       return NextResponse.json(
         { error: isAudioUpload
@@ -66,14 +71,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const sourceBuffer = Buffer.from(await file.arrayBuffer())
+
+    // HEIC/HEIF → JPEG 변환 (모든 브라우저에서 표시 가능하도록)
+    const buffer = isHeic ? await convertHeicToJpeg(sourceBuffer) : sourceBuffer
+    const contentType = isHeic ? 'image/jpeg' : file.type
+    const extension = isHeic ? '.jpg' : extensionMap[file.type] || '.jpg'
+
     // 고유한 파일명 생성 (prefix로 파일 유형 구분)
-    const extension = extensionMap[file.type] || '.jpg'
     const prefix = isAudioUpload ? 'bgm' : 'uploads'
     const key = `${prefix}/${randomUUID()}${extension}`
 
     // S3에 파일 업로드
-    const buffer = Buffer.from(await file.arrayBuffer())
-    const url = await uploadToS3(buffer, key, file.type)
+    const url = await uploadToS3(buffer, key, contentType)
 
     return NextResponse.json({ url }, { status: 201 })
   } catch (error) {
