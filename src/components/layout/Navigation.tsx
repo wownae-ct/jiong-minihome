@@ -46,7 +46,7 @@ export function Navigation() {
             ref={isActive ? activeRef : undefined}
             onClick={() => setActiveTab(item.id)}
             className={`
-              shrink-0 text-center relative px-3 sm:px-4 md:px-6 py-2 md:py-3 text-sm md:text-base rounded-t-xl transition-all whitespace-nowrap cursor-pointer
+              shrink-0 text-center relative px-2.5 sm:px-3.5 md:px-5 py-2 md:py-3 text-sm md:text-base rounded-t-xl transition-all whitespace-nowrap cursor-pointer
               ${isActive
                 ? 'bg-white dark:bg-surface-dark border-x border-t border-slate-200 dark:border-slate-700 text-primary font-bold shadow-[0_-2px_10px_rgba(0,0,0,0.02)]'
                 : 'bg-slate-200/50 dark:bg-slate-800/50 hover:bg-white dark:hover:bg-slate-800 border-x border-t border-transparent hover:border-slate-200 dark:hover:border-slate-700 text-slate-600 dark:text-slate-400'
