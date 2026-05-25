@@ -13,6 +13,7 @@ import { DeleteConfirmModal } from '@/components/common/DeleteConfirmModal'
 import { ProfileAvatar } from '@/components/common/ProfileAvatar'
 import { sanitizeHtml, isHtmlContent } from '@/lib/sanitize'
 import { highlightCodeBlocks } from '@/lib/highlight-code'
+import { rewriteStorageHtml } from '@/lib/fileUrl'
 
 interface PostDetailProps {
   post: {
@@ -247,7 +248,7 @@ export function PostDetail({ post, onBack, onEdit, onDelete, onMemberClick }: Po
             <div
               ref={proseRef}
               className="prose dark:prose-invert max-w-none"
-              dangerouslySetInnerHTML={{ __html: highlightCodeBlocks(sanitizeHtml(post.content)) }}
+              dangerouslySetInnerHTML={{ __html: highlightCodeBlocks(sanitizeHtml(rewriteStorageHtml(post.content))) }}
             />
           ) : (
             <div className="prose dark:prose-invert max-w-none whitespace-pre-wrap">

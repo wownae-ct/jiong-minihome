@@ -1,5 +1,12 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+  GetObjectCommand,
+  type GetObjectCommandOutput,
+} from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import { FILE_PROXY_PREFIX, extractStorageKey } from './fileUrl'
 
 const s3Client = new S3Client({
   endpoint: process.env.MINIO_ENDPOINT,
@@ -49,9 +56,26 @@ export async function deleteFromS3(key: string): Promise<void> {
   )
 }
 
+/**
+ * 저장/표시에 쓰는 공개 경로. 버킷을 비공개로 두므로 MinIO 절대 URL 대신
+ * 동일 출처 프록시 경로(/api/files/<key>)를 반환한다. (실제 객체는 프록시 라우트가 중계)
+ */
 export function getPublicUrl(key: string): string {
-  const baseUrl = (process.env.MINIO_PUBLIC_URL || '').replace(/\/$/, '')
-  return `${baseUrl}/${BUCKET}/${key}`
+  return `${FILE_PROXY_PREFIX}/${key}`
+}
+
+/**
+ * 비공개 MinIO에서 객체를 가져온다(프록시 라우트 전용). Range 헤더를 전달하면
+ * 부분 응답(206)을 위한 메타데이터가 함께 채워진다.
+ */
+export async function getObject(key: string, range?: string): Promise<GetObjectCommandOutput> {
+  return s3Client.send(
+    new GetObjectCommand({
+      Bucket: BUCKET,
+      Key: key,
+      Range: range,
+    }),
+  )
 }
 
 export async function createPresignedUploadUrl(
@@ -67,13 +91,9 @@ export async function createPresignedUploadUrl(
   return getSignedUrl(s3PublicClient, command, { expiresIn })
 }
 
+/**
+ * 저장된 값(절대 MinIO URL 또는 /api/files 프록시 경로)에서 삭제용 key를 추출한다.
+ */
 export function extractKeyFromUrl(url: string): string | null {
-  if (!url) return null
-  const baseUrl = (process.env.MINIO_PUBLIC_URL || '').replace(/\/$/, '')
-  const prefix = `${baseUrl}/${BUCKET}/`
-  if (url.startsWith(prefix)) {
-    return url.slice(prefix.length)
-  }
-
-  return null
+  return extractStorageKey(url)
 }

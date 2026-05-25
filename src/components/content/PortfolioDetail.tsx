@@ -11,6 +11,7 @@ import { useToast } from "@/components/providers/ToastProvider";
 import { motion } from "framer-motion";
 import { parsePortfolioImages } from "@/lib/portfolio-images";
 import { highlightCodeBlocks } from "@/lib/highlight-code";
+import { rewriteStorageHtml } from "@/lib/fileUrl";
 
 interface PortfolioDetailProps {
     project: Portfolio;
@@ -194,7 +195,7 @@ export function PortfolioDetail({
                             ref={proseRef}
                             className="prose prose-slate dark:prose-invert max-w-none overflow-hidden"
                             dangerouslySetInnerHTML={{
-                                __html: highlightCodeBlocks(project.content),
+                                __html: highlightCodeBlocks(rewriteStorageHtml(project.content)),
                             }}
                         />
                     </div>

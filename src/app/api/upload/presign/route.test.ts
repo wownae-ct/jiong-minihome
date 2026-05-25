@@ -10,9 +10,7 @@ vi.mock('@/lib/auth', () => ({
 
 vi.mock('@/lib/s3', () => ({
   createPresignedUploadUrl: vi.fn().mockResolvedValue('https://minio.example.com/presigned'),
-  getPublicUrl: vi.fn().mockImplementation((key: string) =>
-    `http://minio.example.com:9000/portfolio-web/${key}`,
-  ),
+  getPublicUrl: vi.fn().mockImplementation((key: string) => `/api/files/${key}`),
 }))
 
 import { auth } from '@/lib/auth'
@@ -78,7 +76,7 @@ describe('/api/upload/presign', () => {
     const body = await res.json()
     expect(body.presignedUrl).toBe('https://minio.example.com/presigned')
     expect(body.key).toMatch(/^uploads\/[\w-]+\.mp4$/)
-    expect(body.publicUrl).toContain('portfolio-web')
+    expect(body.publicUrl).toContain('/api/files/')
   })
 
   it('이미지 파일에 대해 presigned URL 반환', async () => {

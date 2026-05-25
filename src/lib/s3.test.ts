@@ -23,6 +23,11 @@ vi.mock('@aws-sdk/client-s3', () => {
         Object.assign(this, params)
       }
     },
+    GetObjectCommand: class {
+      constructor(params: unknown) {
+        Object.assign(this, params)
+      }
+    },
   }
 })
 
@@ -66,7 +71,7 @@ describe('S3 유틸리티', () => {
 
       const url = await uploadToS3(Buffer.from('data'), 'uploads/photo.png', 'image/png')
 
-      expect(url).toBe('http://minio.example.com:9000/portfolio-web/uploads/photo.png')
+      expect(url).toBe('/api/files/uploads/photo.png')
     })
   })
 
@@ -85,23 +90,23 @@ describe('S3 유틸리티', () => {
   })
 
   describe('getPublicUrl', () => {
-    it('올바른 공개 URL을 조합해야 한다', async () => {
+    it('동일 출처 프록시 경로(/api/files/<key>)를 반환해야 한다', async () => {
       const { getPublicUrl } = await import('./s3')
 
-      expect(getPublicUrl('uploads/photo.jpg')).toBe('http://minio.example.com:9000/portfolio-web/uploads/photo.jpg')
+      expect(getPublicUrl('uploads/photo.jpg')).toBe('/api/files/uploads/photo.jpg')
     })
 
-    it('bgm prefix가 포함된 key도 올바르게 처리해야 한다', async () => {
+    it('bgm prefix가 포함된 key도 프록시 경로로 처리해야 한다', async () => {
       const { getPublicUrl } = await import('./s3')
 
-      expect(getPublicUrl('bgm/song.mp3')).toBe('http://minio.example.com:9000/portfolio-web/bgm/song.mp3')
+      expect(getPublicUrl('bgm/song.mp3')).toBe('/api/files/bgm/song.mp3')
     })
 
-    it('MINIO_PUBLIC_URL의 trailing slash를 처리해야 한다', async () => {
-      vi.stubEnv('MINIO_PUBLIC_URL', 'http://minio.example.com:9000/')
+    it('MINIO_PUBLIC_URL 값과 무관하게 상대 프록시 경로를 반환해야 한다', async () => {
+      vi.stubEnv('MINIO_PUBLIC_URL', 'https://changed.example.com/')
       const { getPublicUrl } = await import('./s3')
 
-      expect(getPublicUrl('uploads/photo.jpg')).toBe('http://minio.example.com:9000/portfolio-web/uploads/photo.jpg')
+      expect(getPublicUrl('uploads/photo.jpg')).toBe('/api/files/uploads/photo.jpg')
     })
   })
 
