@@ -106,4 +106,24 @@ describe('GET /api/files/[...key]', () => {
 
     expect(res.status).toBe(404)
   })
+
+  it('MinIO가 없는 객체에 AccessDenied(403)를 돌려줘도 404로 처리한다', async () => {
+    mockGetObject.mockRejectedValue({ name: 'AccessDenied', $metadata: { httpStatusCode: 403 } })
+
+    const res = await GET(req('http://localhost/api/files/uploads/gone.jpg'), {
+      params: Promise.resolve({ key: ['uploads', 'gone.jpg'] }),
+    })
+
+    expect(res.status).toBe(404)
+  })
+
+  it('알 수 없는 오류는 500', async () => {
+    mockGetObject.mockRejectedValue({ name: 'TimeoutError', $metadata: { httpStatusCode: 500 } })
+
+    const res = await GET(req('http://localhost/api/files/uploads/x.jpg'), {
+      params: Promise.resolve({ key: ['uploads', 'x.jpg'] }),
+    })
+
+    expect(res.status).toBe(500)
+  })
 })

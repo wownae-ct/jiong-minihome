@@ -54,10 +54,18 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       (err as { Code?: string })?.Code
     const httpStatus = (err as { $metadata?: { httpStatusCode?: number } })?.$metadata
       ?.httpStatusCode
-    if (code === 'NoSuchKey' || code === 'NotFound' || httpStatus === 404) {
+    // 없는 객체는 404로 처리. MinIO는 ListBucket 권한이 없으면 없는 키에 대해
+    // NoSuchKey(404) 대신 AccessDenied(403)를 돌려주므로 둘 다 not-found로 본다.
+    if (
+      code === 'NoSuchKey' ||
+      code === 'NotFound' ||
+      code === 'AccessDenied' ||
+      httpStatus === 404 ||
+      httpStatus === 403
+    ) {
       return NOT_FOUND()
     }
-    console.error('파일 프록시 오류:', err)
+    console.error(`파일 프록시 오류 (key=${key}, code=${code}):`, err)
     return new Response('Internal Server Error', { status: 500 })
   }
 }
