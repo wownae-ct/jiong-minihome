@@ -8,6 +8,7 @@ import {
   settingKeyToProfileKey,
 } from '@/lib/validations/profile'
 import { requireAdmin, formatZodError } from '@/lib/api/helpers'
+import { toProxyPath } from '@/lib/fileUrl'
 
 export async function GET() {
   try {
@@ -34,6 +35,9 @@ export async function GET() {
       const profileKey = settingKeyToProfileKey(setting.settingKey as (typeof PROFILE_SETTING_KEYS)[number])
       profile[profileKey] = setting.settingValue || ''
     }
+
+    // 프로필 이미지는 비공개 MinIO 객체 → 동일 출처 프록시 경로로 변환 (외부 URL은 그대로)
+    profile.imageUrl = toProxyPath(profile.imageUrl)
 
     return NextResponse.json(profile)
   } catch (error) {

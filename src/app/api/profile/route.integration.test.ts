@@ -54,8 +54,9 @@ vi.mock('@/lib/prisma', () => ({
 
 // Mock S3 for upload
 vi.mock('@/lib/s3', () => ({
+  // 실제 uploadToS3는 getPublicUrl(=동일 출처 프록시 경로)을 반환한다.
   uploadToS3: vi.fn().mockImplementation((_buffer: Buffer, key: string) =>
-    Promise.resolve(`http://minio.example.com:9000/portfolio-web/${key}`)
+    Promise.resolve(`/api/files/${key}`)
   ),
 }))
 
@@ -89,7 +90,7 @@ describe('프로필 설정 통합 테스트', () => {
         github: 'https://github.com/jiong',
         linkedin: 'https://linkedin.com/in/jiong',
         website: 'https://jiong.dev',
-        imageUrl: '/uploads/profile-123.png',
+        imageUrl: '/api/files/uploads/profile-123.png',
       }
 
       // 1. 프로필 저장
@@ -393,7 +394,7 @@ describe('프로필 설정 통합 테스트', () => {
 
       const uploadData = await uploadResponse.json()
       expect(uploadData.url).toBeDefined()
-      expect(uploadData.url).toMatch(/^http:\/\/minio\.example\.com:9000\/portfolio-web\/uploads\//)
+      expect(uploadData.url).toMatch(/^\/api\/files\/uploads\//)
       expect(uploadData.url).toMatch(/\.png$/)
     })
 
@@ -572,7 +573,7 @@ describe('프로필 설정 통합 테스트', () => {
       expect(savedProfile.linkedin).toBe(profileData.linkedin)
       expect(savedProfile.website).toBe(profileData.website)
       expect(savedProfile.imageUrl).toBe(imageUrl)
-      expect(savedProfile.imageUrl).toMatch(/^http:\/\/minio\.example\.com:9000\/portfolio-web\/uploads\//)
+      expect(savedProfile.imageUrl).toMatch(/^\/api\/files\/uploads\//)
     })
   })
 })

@@ -7,8 +7,10 @@ const optionalEmail = z.union([
 
 const optionalUrl = z.union([z.string().url('유효한 URL을 입력해주세요'), z.literal('')])
 
+// 절대 URL(외부 아바타) 또는 동일 출처 프록시 경로(/api/files/...) 허용
 const optionalImageUrl = z.union([
   z.string().url('유효한 URL을 입력해주세요'),
+  z.string().regex(/^\/api\/files\//, '유효한 이미지 경로가 아닙니다'),
   z.literal(''),
 ])
 

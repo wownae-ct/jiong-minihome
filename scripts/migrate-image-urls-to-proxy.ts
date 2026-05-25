@@ -90,6 +90,16 @@ async function main() {
     ),
   )
 
+  // 프로필 이미지 등은 SiteSetting(key-value)에 저장됨
+  results.push(
+    await migrateUrlField(
+      'SiteSetting.settingValue',
+      await prisma.siteSetting.findMany({ select: { id: true, settingValue: true } }),
+      (r) => r.settingValue,
+      (id, value) => prisma.siteSetting.update({ where: { id }, data: { settingValue: value } }),
+    ),
+  )
+
   results.push(
     await migrateUrlField(
       'BgmTrack.url',
