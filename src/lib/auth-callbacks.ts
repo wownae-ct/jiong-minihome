@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs'
 import { prisma } from './prisma'
+import { toProxyPath } from './fileUrl'
 import type { JWT } from 'next-auth/jwt'
 import type { Account, Session } from 'next-auth'
 
@@ -185,7 +186,9 @@ export async function handleSessionCallback({
   if (session.user) {
     session.user.id = token.id as string
     session.user.role = token.role as string
-    session.user.image = (token.picture as string) || undefined
+    // JWT에 캐시된 옛 절대 MinIO URL도 동일 출처 프록시 경로로 변환(외부 OAuth 아바타는 그대로).
+    // → 재로그인 없이 헤더 아바타가 /api/files 로 뜬다.
+    session.user.image = toProxyPath(token.picture as string) || undefined
   }
   return session
 }
