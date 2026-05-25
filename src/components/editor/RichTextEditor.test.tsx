@@ -112,7 +112,7 @@ describe('RichTextEditor', () => {
         <RichTextEditor {...defaultProps} onImageUpload={onImageUpload} />
       )
 
-      const fileInput = document.querySelector('input[type="file"][accept="image/*"]') as HTMLInputElement
+      const fileInput = document.querySelector('input[type="file"][accept*="image/*"]') as HTMLInputElement
       expect(fileInput).toBeInTheDocument()
       expect(fileInput).toHaveAttribute('multiple')
     })
@@ -128,7 +128,7 @@ describe('RichTextEditor', () => {
         <RichTextEditor {...defaultProps} onImageUpload={onImageUpload} />
       )
 
-      const fileInput = document.querySelector('input[type="file"][accept="image/*"]') as HTMLInputElement
+      const fileInput = document.querySelector('input[type="file"][accept*="image/*"]') as HTMLInputElement
       const file1 = new File(['img1'], 'test1.jpg', { type: 'image/jpeg' })
       const file2 = new File(['img2'], 'test2.jpg', { type: 'image/jpeg' })
       const file3 = new File(['img3'], 'test3.jpg', { type: 'image/jpeg' })
@@ -155,7 +155,7 @@ describe('RichTextEditor', () => {
         />
       )
 
-      const fileInput = document.querySelector('input[type="file"][accept="image/*"]') as HTMLInputElement
+      const fileInput = document.querySelector('input[type="file"][accept*="image/*"]') as HTMLInputElement
       const file1 = new File(['img1'], 'new1.jpg', { type: 'image/jpeg' })
       const file2 = new File(['img2'], 'new2.jpg', { type: 'image/jpeg' })
       const file3 = new File(['img3'], 'new3.jpg', { type: 'image/jpeg' })
@@ -179,7 +179,7 @@ describe('RichTextEditor', () => {
         />
       )
 
-      const fileInput = document.querySelector('input[type="file"][accept="image/*"]') as HTMLInputElement
+      const fileInput = document.querySelector('input[type="file"][accept*="image/*"]') as HTMLInputElement
       const file1 = new File(['img1'], 'new1.jpg', { type: 'image/jpeg' })
       const file2 = new File(['img2'], 'new2.jpg', { type: 'image/jpeg' })
 
@@ -202,7 +202,7 @@ describe('RichTextEditor', () => {
         />
       )
 
-      const fileInput = document.querySelector('input[type="file"][accept="image/*"]') as HTMLInputElement
+      const fileInput = document.querySelector('input[type="file"][accept*="image/*"]') as HTMLInputElement
       const file = new File(['img'], 'test.gif', { type: 'image/gif' })
 
       await user.upload(fileInput, file)

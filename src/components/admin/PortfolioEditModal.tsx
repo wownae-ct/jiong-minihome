@@ -89,8 +89,9 @@ export function PortfolioEditModal({
     const file = e.target.files?.[0]
     if (!file) return
 
-    // 파일 타입 검증
-    if (!['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)) {
+    // 파일 타입 검증 (HEIC/HEIF는 서버에서 JPEG로 변환되므로 허용)
+    const isAllowedImage = file.type.startsWith('image/') || /\.(heic|heif)$/i.test(file.name)
+    if (!isAllowedImage) {
       setError('이미지 파일만 업로드할 수 있습니다. (jpg, jpeg, png, gif, webp)')
       return
     }
@@ -327,7 +328,7 @@ export function PortfolioEditModal({
                       <input
                         ref={(el) => { fileInputRefs.current[index] = el }}
                         type="file"
-                        accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                        accept="image/*,.heic,.heif"
                         onChange={(e) => handleImageUpload(e, index)}
                         className="hidden"
                         id={`portfolio-image-upload-${index}`}

@@ -19,7 +19,7 @@ export function ImageDropZone({
     onRemove,
     isUploading = false,
     maxSize = 5 * 1024 * 1024,
-    accept = "image/*",
+    accept = "image/*,.heic,.heif",
     className = "",
 }: ImageDropZoneProps) {
     const [isDragging, setIsDragging] = useState(false);
@@ -28,7 +28,8 @@ export function ImageDropZone({
 
     const validateFile = useCallback(
         (file: File): string | null => {
-            if (!file.type.startsWith("image/")) {
+            const isImage = file.type.startsWith("image/") || /\.(heic|heif)$/i.test(file.name);
+            if (!isImage) {
                 return "이미지 파일만 업로드할 수 있습니다.";
             }
             if (file.size > maxSize) {
